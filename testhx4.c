@@ -70,7 +70,7 @@ float MiB_per_s(size_t bytes, const hx_time *start, const hx_time *end) {
 }
 
 
-static int test_hashx4_djb2_32_ref_performance(FILE *stream, const void *random_buffer, size_t random_buffer_size) {
+static int test_hashx4_djbx33a_32_ref_performance(FILE *stream, const void *random_buffer, size_t random_buffer_size) {
   int rc = 0;
   hx_time start;
   hx_time stop;
@@ -79,7 +79,7 @@ static int test_hashx4_djb2_32_ref_performance(FILE *stream, const void *random_
 
   start = hx_gettime();
   for (i = 0; i < 4; i++) {
-    rc += hashx4_djb2_32_ref(random_buffer, random_buffer_size, hash_output, sizeof(hash_output));
+    rc += hashx4_djbx33a_32_ref(random_buffer, random_buffer_size, hash_output, sizeof(hash_output));
   }
   stop = hx_gettime();
 
@@ -88,7 +88,7 @@ static int test_hashx4_djb2_32_ref_performance(FILE *stream, const void *random_
   return rc;
 }
 
-static int test_hashx4_djb2_32_copt_performance(FILE *stream, const void *random_buffer, size_t random_buffer_size) {
+static int test_hashx4_djbx33a_32_copt_performance(FILE *stream, const void *random_buffer, size_t random_buffer_size) {
   int rc = 0;
   hx_time start;
   hx_time stop;
@@ -97,7 +97,7 @@ static int test_hashx4_djb2_32_copt_performance(FILE *stream, const void *random
 
   start = hx_gettime();
   for (i = 0; i < 4; i++) {
-    rc += hashx4_djb2_32_copt(random_buffer, random_buffer_size, hash_output, sizeof(hash_output));
+    rc += hashx4_djbx33a_32_copt(random_buffer, random_buffer_size, hash_output, sizeof(hash_output));
   }
   stop = hx_gettime();
 
@@ -108,7 +108,7 @@ static int test_hashx4_djb2_32_copt_performance(FILE *stream, const void *random
 
 
 
-static int test_hashx4_djb2x4_128_ref_performance(FILE *stream, const void *random_buffer, size_t random_buffer_size) {
+static int test_hashx4_djbx33ax4_128_ref_performance(FILE *stream, const void *random_buffer, size_t random_buffer_size) {
   int rc = 0;
   hx_time start;
   hx_time stop;
@@ -117,7 +117,7 @@ static int test_hashx4_djb2x4_128_ref_performance(FILE *stream, const void *rand
 
   start = hx_gettime();
   for (i = 0; i < 4; i++) {
-    rc += hashx4_djb2x4_128_ref(random_buffer, random_buffer_size, hash_output, sizeof(hash_output));
+    rc += hashx4_djbx33ax4_128_ref(random_buffer, random_buffer_size, hash_output, sizeof(hash_output));
   }
   stop = hx_gettime();
 
@@ -126,7 +126,7 @@ static int test_hashx4_djb2x4_128_ref_performance(FILE *stream, const void *rand
   return rc;
 }
 
-static int test_hashx4_djb2x4_128_copt_performance(FILE *stream, const void *random_buffer, size_t random_buffer_size) {
+static int test_hashx4_djbx33ax4_128_copt_performance(FILE *stream, const void *random_buffer, size_t random_buffer_size) {
   int rc = 0;
   hx_time start;
   hx_time stop;
@@ -135,7 +135,7 @@ static int test_hashx4_djb2x4_128_copt_performance(FILE *stream, const void *ran
 
   start = hx_gettime();
   for (i = 0; i < 4; i++) {
-    rc += hashx4_djb2x4_128_copt(random_buffer, random_buffer_size, hash_output, sizeof(hash_output));
+    rc += hashx4_djbx33ax4_128_copt(random_buffer, random_buffer_size, hash_output, sizeof(hash_output));
   }
   stop = hx_gettime();
 
@@ -144,7 +144,7 @@ static int test_hashx4_djb2x4_128_copt_performance(FILE *stream, const void *ran
   return rc;
 }
 
-static int test_hashx4_djb2x4_128_sse2_performance(FILE *stream, const void *random_buffer, size_t random_buffer_size) {
+static int test_hashx4_djbx33ax4_128_sse2_performance(FILE *stream, const void *random_buffer, size_t random_buffer_size) {
   int rc = 0;
   hx_time start;
   hx_time stop;
@@ -153,7 +153,7 @@ static int test_hashx4_djb2x4_128_sse2_performance(FILE *stream, const void *ran
 
   start = hx_gettime();
   for (i = 0; i < 4; i++) {
-    rc += hashx4_djb2x4_128_sse2(random_buffer, random_buffer_size, hash_output, sizeof(hash_output));
+    rc += hashx4_djbx33ax4_128_sse2(random_buffer, random_buffer_size, hash_output, sizeof(hash_output));
   }
   stop = hx_gettime();
 
@@ -162,7 +162,7 @@ static int test_hashx4_djb2x4_128_sse2_performance(FILE *stream, const void *ran
   return rc;
 }
 
-static int test_hashx4_djb2x4_128_ssse3_performance(FILE *stream, const void *random_buffer, size_t random_buffer_size) {
+static int test_hashx4_djbx33ax4_128_ssse3_performance(FILE *stream, const void *random_buffer, size_t random_buffer_size) {
   int rc = 0;
   hx_time start;
   hx_time stop;
@@ -171,7 +171,7 @@ static int test_hashx4_djb2x4_128_ssse3_performance(FILE *stream, const void *ra
 
   start = hx_gettime();
   for (i = 0; i < 4; i++) {
-    rc += hashx4_djb2x4_128_ssse3(random_buffer, random_buffer_size, hash_output, sizeof(hash_output));
+    rc += hashx4_djbx33ax4_128_ssse3(random_buffer, random_buffer_size, hash_output, sizeof(hash_output));
   }
   stop = hx_gettime();
 
@@ -180,7 +180,7 @@ static int test_hashx4_djb2x4_128_ssse3_performance(FILE *stream, const void *ra
   return rc;
 }
 
-static int test_hashx4_djb2x4_128_all_correctness(FILE *stream, const void *random_buffer, size_t random_buffer_size) {
+static int test_hashx4_djbx33ax4_128_all_correctness(FILE *stream, const void *random_buffer, size_t random_buffer_size) {
   int rc = 0;
   int i;
   uint8_t hash_output_ref[128/8];
@@ -199,19 +199,19 @@ static int test_hashx4_djb2x4_128_all_correctness(FILE *stream, const void *rand
   }
 
   for(i=0; i<32 && i<random_buffer_size; i++) { 
-    rc = hashx4_djb2x4_128_ref((uint8_t*)random_buffer+i, random_buffer_size-i, hash_output_ref, sizeof(hash_output_ref));
+    rc = hashx4_djbx33ax4_128_ref((uint8_t*)random_buffer+i, random_buffer_size-i, hash_output_ref, sizeof(hash_output_ref));
     if(rc != HX4_ERR_SUCCESS) {
       return rc;
     }
-    rc = hashx4_djb2x4_128_copt((uint8_t*)random_buffer+i, random_buffer_size-i, hash_output_copt, sizeof(hash_output_copt));
+    rc = hashx4_djbx33ax4_128_copt((uint8_t*)random_buffer+i, random_buffer_size-i, hash_output_copt, sizeof(hash_output_copt));
     if(rc != HX4_ERR_SUCCESS) {
       return rc;
     }
-    rc = hashx4_djb2x4_128_sse2((uint8_t*)random_buffer+i, random_buffer_size-i, hash_output_sse2, sizeof(hash_output_sse2));
+    rc = hashx4_djbx33ax4_128_sse2((uint8_t*)random_buffer+i, random_buffer_size-i, hash_output_sse2, sizeof(hash_output_sse2));
     if(rc != HX4_ERR_SUCCESS) {
       return rc;
     }
-    rc = hashx4_djb2x4_128_ssse3((uint8_t*)random_buffer + i, random_buffer_size - i, hash_output_ssse3, sizeof(hash_output_ssse3));
+    rc = hashx4_djbx33ax4_128_ssse3((uint8_t*)random_buffer + i, random_buffer_size - i, hash_output_ssse3, sizeof(hash_output_ssse3));
     if (rc != HX4_ERR_SUCCESS) {
       return rc;
     }
