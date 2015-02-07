@@ -127,7 +127,6 @@ int hashx4_djb2_128_copt(const void *buffer, size_t buffer_size, void *out_hash,
     __assume((size_t)p % 16 == 0);
 #endif
 
-#ifdef HX4_UNROLL_LOOPS_MANUALLY
     state[0] = state[0] * 33 + p[0];
     state[1] = state[1] * 33 + p[1];
     state[2] = state[2] * 33 + p[2];
@@ -147,11 +146,7 @@ int hashx4_djb2_128_copt(const void *buffer, size_t buffer_size, void *out_hash,
     state[1] = state[1] * 33 + p[13];
     state[2] = state[2] * 33 + p[14];
     state[3] = state[3] * 33 + p[15];
-#else
-    for(i=0;i<16;i++) {
-      state[i%4] = state[i%4] * 33 + p[i];
-    }
-#endif
+    
     p+=16;
   }
   
@@ -189,13 +184,13 @@ int hashx4_djb2_128_sse2(const void *buffer, size_t buffer_size, void *out_hash,
 
   uint32_t state_tmp;
   __m128i xstate;
-  __m128i xtmp;
   __m128i xp;
   int state_i = 0;
   int rc;
   int i;
 #if 0
   __m128i xpin;
+  __m128i xtmp;
   int tmp;
 #endif
 
@@ -262,14 +257,31 @@ int hashx4_djb2_128_sse2(const void *buffer, size_t buffer_size, void *out_hash,
     xstate = _mm_add_epi32(xstate, xp);
 #endif
 
+#if 0
+    //load 16 bytes aligned
+    xpin = _mm_load_si128((__m128i*)p);
+#define H4X_SSE2_DJB2ROUND(round) \
+    /* unpack 4 bytes per round */ \
+    tmp = _mm_cvtsi128_si32(xpin); \
+    xp = _mm_set_epi32( \
+      (uint8_t)(tmp >> 8*3), \
+      (uint8_t)(tmp >> 8*2), \
+      (uint8_t)(tmp >> 8*1), \
+      (uint8_t)(tmp >> 8*0)  \
+    ); \
+    xpin = _mm_srli_si128(xpin, 4); \
+    xp = _mm_add_epi32(xp, xstate); \
+    xstate = _mm_slli_epi32(xstate, 5); \
+    xstate = _mm_add_epi32(xstate, xp);
+#endif
+
+
 #if 1
 #define H4X_SSE2_DJB2ROUND(round) \
     /* load 4 bytes, expand into xp */ \
     xp = _mm_set_epi32(p[round*4+3], p[round*4+2], p[round*4+1], p[round*4+0]); \
-    /* multiply by shift << 5 and add */ \
-    xtmp = _mm_slli_epi32(xstate, 5); \
-    xstate = _mm_add_epi32(xtmp, xstate); \
-    /* add input */ \
+    xp = _mm_add_epi32(xp, xstate); \
+    xstate = _mm_slli_epi32(xstate, 5); \
     xstate = _mm_add_epi32(xstate, xp);
 #endif
     
@@ -316,7 +328,6 @@ int hashx4_djb2_128_ssse3(const void *buffer, size_t buffer_size, void *out_hash
 #endif
   uint32_t state_tmp;
   __m128i xstate;
-  __m128i xtmp;
   __m128i xp;
   __m128i xpin;
   __m128i xbmask;
@@ -380,14 +391,11 @@ int hashx4_djb2_128_ssse3(const void *buffer, size_t buffer_size, void *out_hash
     xpin = _mm_shuffle_epi8(xpin, xshuffle);
 
 #define H4X_SSSE3_DJB2ROUND(round) \
-    /* select bytes for this round */ \
     xp = _mm_srli_epi32(xpin, 8*round); \
     xp = _mm_and_si128(xp, xbmask); \
-    /* multiply by shift << 5 and add */ \
-    xtmp = _mm_slli_epi32(xstate, 5); \
-    xstate = _mm_add_epi32(xtmp, xstate); \
-    /* add input */ \
-    xstate = _mm_add_epi32(xstate, xp);
+    xp = _mm_add_epi32(xp, xstate); \
+    xstate = _mm_slli_epi32(xstate, 5); \
+    xstate = _mm_add_epi32(xstate, xp); \
 
     H4X_SSSE3_DJB2ROUND(0)
     H4X_SSSE3_DJB2ROUND(1)
