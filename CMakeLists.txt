@@ -7,7 +7,7 @@ add_definitions(
   #-g
   #-march=atom
   -march=native
-  -mssse3
+  #-mssse3
   #-ftree-vectorize
   #-ftree-vectorizer-verbose=1
 )
