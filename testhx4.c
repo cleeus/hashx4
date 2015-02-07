@@ -272,13 +272,13 @@ int main(int argc, char **argv) {
   init_random_buffer(random_buffer, random_buffer_size);
 
   test_t tests[] = {
-    TEST_ITEM(test_hashx4_djb2_32_ref_performance)
-    TEST_ITEM(test_hashx4_djb2_32_copt_performance)
-    TEST_ITEM(test_hashx4_djb2x4_128_ref_performance)
-    TEST_ITEM(test_hashx4_djb2x4_128_copt_performance)
-    TEST_ITEM(test_hashx4_djb2x4_128_sse2_performance)
-    TEST_ITEM(test_hashx4_djb2x4_128_ssse3_performance)
-    TEST_ITEM(test_hashx4_djb2x4_128_all_correctness)
+    TEST_ITEM(test_hashx4_djbx33a_32_ref_performance)
+    TEST_ITEM(test_hashx4_djbx33a_32_copt_performance)
+    TEST_ITEM(test_hashx4_djbx33ax4_128_ref_performance)
+    TEST_ITEM(test_hashx4_djbx33ax4_128_copt_performance)
+    TEST_ITEM(test_hashx4_djbx33ax4_128_sse2_performance)
+    TEST_ITEM(test_hashx4_djbx33ax4_128_ssse3_performance)
+    TEST_ITEM(test_hashx4_djbx33ax4_128_all_correctness)
   };
 
   for(i=0; i<sizeof(tests)/sizeof(test_t); i++) {

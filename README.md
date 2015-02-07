@@ -18,15 +18,16 @@ Hashx4 is licensed under the GPL v3 or later.
 algorithms
 ----------
 
-* *djb2\_32 ref* - This is the well known djb2 hash function from Daniel Bernstein (h\_i+1 = h\_i * 33 + c, h\_0 = 5381).
+* *djbx33a\_32 ref* - This is the well known DJBX33A hash function from Daniel Bernstein (h\_i+1 = h\_i * 33 + c\_i+1, h\_0 = 5381).
 	It is included to show a baseline in benchmarks. The implementation is a naive loop you might find in any example code.
-* *djb2\_32 copt* - The same djb2 hash function with an alignment seek
+* *djbx33a\_32 copt* - The same DJBX33A hash function with an alignment seek
 	to give the compiler a chance to vectorize and/or optimize better.
-* *djb2x4\_128 ref* - Interleaved input on 4 djb2 functions (hence djb2x4), 128bit output. A naive loop implementation that can serve as
+* *djbx33ax4\_128 ref* - Interleaved input on 4 djbx33a functions (hence djbx33ax4), 128bit output.
+	A naive loop implementation that can serve as
 	a reference to check the correctness of the optimized implementations.
-* *djb2x4\_128 copt* - The same djb2x4 function with some alignment hints for the compiler.
-* *djb2x4\_128 sse2* - SSE2 intrinsics implementation.
-* *djb2x4\_128 ssse3* - SSSE3 intrinsics implementation. SSSE3 has many useful new instructions, among them a mighty \_mm\_shuffle\_epi8
+* *djbx33ax4\_128 copt* - The same djbx33ax4 function with some alignment hints for the compiler.
+* *djbx33ax4\_128 sse2* - SSE2 intrinsics implementation.
+* *djbx33ax4\_128 ssse3* - SSSE3 intrinsics implementation. SSSE3 has many useful new instructions, among them a mighty \_mm\_shuffle\_epi8
 	which solves a problem in the SSE2 implementation.
 
 benchmarks
@@ -34,7 +35,7 @@ benchmarks
 
 hashrates in MiB/s
 
-| cpu/abi/compiler+options | djb2\_32 ref | djb2\_32 copt | djb2x4\_128 ref | djb2x4\_128 copt | djb2x4\_128 sse2 | djb2x4\_128 ssse3 |
+| cpu/abi/compiler+options | x33a\_32 ref | x33a\_32 copt | x33ax4\_128 ref | x33ax4\_128 copt | x33ax4\_128 sse2 | x33ax4\_128 ssse3 |
 |--------------------------|--------------|---------------|-----------------|------------------|------------------|-------------------|
 | Atom N450 2x1.6GHz / amd64 / gcc-4.8 -O3 -march=native      |  376 |  360 |   91 |  376 |  370 |  949 |
 | Atom N450 2x1.6GHz / amd64 / gcc-4.8 -O2 -march=native      |  374 |  234 |   97 |  360 |  370 | 1040 |
