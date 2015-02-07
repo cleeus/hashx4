@@ -14,3 +14,12 @@ in most SIMD instruction sets.
 Copyright Kai Dietrich <mail@cleeus.de> 2015.
 Hashx4 is licensed under the GPL v3 or later.
 
+
+benchmarks
+==========
+
+| compiler+options/platform/cpu | djb2\_128\_cref | djb2\_128\_copt | djb2\_128\_sse2 | djb2\_128\_ssse3 |
+|-------------------------------|-----------------|-----------------|-----------------|------------------|
+| gcc-4.8.3 -O3 --march=native / amd64 / Atom N450 2x1.6GHz | 91 MiB/s | 376 MiB/s | 370 MiB/s | 949 MiB/s |
+| gcc-4.8.3 -O2 --march=native / amd64 / Atom N450 2x1.6GHz | 97 MiB/s | 360 MiB/s | 370 MiB/s | 1040 MiB/s |
+
