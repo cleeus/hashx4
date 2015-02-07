@@ -51,7 +51,81 @@ int check_params(size_t sizeof_state, const void *buffer, size_t buffer_size, vo
   return HX4_ERR_SUCCESS;
 }
 
-int hashx4_djb2_128_ref(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+static int num_bytes_to_alignment(const void *ptr) {
+  return ((size_t)ptr) % 16 == 0 ? 0 : 16 - (((size_t)ptr) % 16);
+}
+
+
+int hashx4_djb2_32_ref(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+  const uint8_t *p;
+  const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
+  uint32_t state = 5381;
+  int rc;
+
+  rc = check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
+  if(rc != HX4_ERR_SUCCESS) {
+    return rc;
+  }
+  
+  p = buffer;
+  while(p<buffer_end) {
+    state = state * 33  + *p;
+    p++;
+  }
+
+  memcpy(out_hash, &state, sizeof(state));
+
+  return HX4_ERR_SUCCESS;
+}
+
+int hashx4_djb2_32_copt(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+  const uint8_t *p;
+  const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
+  const int num_bytes_to_seek = num_bytes_to_alignment(buffer);
+  uint32_t state = 5381;
+  int rc;
+  int i;
+
+  rc = check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
+  if(rc != HX4_ERR_SUCCESS) {
+    return rc;
+  }
+
+  p = buffer;
+
+  //hash input until p is aligned to alignment_target
+  for(i=0; p<buffer_end && i<num_bytes_to_seek; i++) {
+    state  = state  * 33  + *p;
+    p++;
+  }
+
+#ifdef __GNUC__
+  p = __builtin_assume_aligned(p, 16);
+#elif _MSC_VER
+  __assume((size_t)p % 16 == 0);
+#endif
+
+  //main processing loop
+  while(p+15<buffer_end) {
+#ifdef __GNUC__
+    p = __builtin_assume_aligned(p, 16);
+#elif _MSC_VER
+    __assume((size_t)p % 16 == 0);
+#endif
+    for(i=0; i<16;i++) {
+    	state = state * 33 + p[i];
+    }
+
+    p+=16;
+  }
+  
+  memcpy(out_hash, &state, sizeof(state));
+
+  return HX4_ERR_SUCCESS;
+}
+
+
+int hashx4_djb2x4_128_ref(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
   uint32_t state[] = { 5381, 5381, 5381, 5381 };
@@ -75,11 +149,7 @@ int hashx4_djb2_128_ref(const void *buffer, size_t buffer_size, void *out_hash, 
   return HX4_ERR_SUCCESS;
 }
 
-static int num_bytes_to_alignment(const void *ptr) {
-  return ((size_t)ptr) % 16 == 0 ? 0 : 16 - (((size_t)ptr) % 16);
-}
-
-int hashx4_djb2_128_copt(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+int hashx4_djb2x4_128_copt(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
   const int num_bytes_to_seek = num_bytes_to_alignment(buffer);
@@ -171,7 +241,7 @@ int hashx4_djb2_128_copt(const void *buffer, size_t buffer_size, void *out_hash,
   return HX4_ERR_SUCCESS;
 }
 
-int hashx4_djb2_128_sse2(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+int hashx4_djb2x4_128_sse2(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
   const int num_bytes_to_seek = num_bytes_to_alignment(buffer);
@@ -316,7 +386,7 @@ int hashx4_djb2_128_sse2(const void *buffer, size_t buffer_size, void *out_hash,
   return HX4_ERR_SUCCESS;
 }
 
-int hashx4_djb2_128_ssse3(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+int hashx4_djb2x4_128_ssse3(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
   const int num_bytes_to_seek = num_bytes_to_alignment(buffer);
@@ -428,6 +498,3 @@ int hashx4_djb2_128_ssse3(const void *buffer, size_t buffer_size, void *out_hash
   return HX4_ERR_SUCCESS;
 }
 
-int hashx4_djb2_128(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
-  return hashx4_djb2_128_copt(buffer, buffer_size, out_hash, out_hash_size);
-}
