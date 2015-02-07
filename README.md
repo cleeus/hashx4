@@ -18,8 +18,11 @@ Hashx4 is licensed under the GPL v3 or later.
 benchmarks
 ==========
 
-| compiler+options/platform/cpu | djb2\_128\_cref | djb2\_128\_copt | djb2\_128\_sse2 | djb2\_128\_ssse3 |
-|-------------------------------|-----------------|-----------------|-----------------|------------------|
+| compiler+options/abi/cpu | djb2\_128 cref | djb2\_128 copt | djb2\_128 sse2 | djb2\_128 ssse3 |
+|-------------------------------|----------------|----------------|----------------|-----------------|
 | gcc-4.8.3 -O3 --march=native / amd64 / Atom N450 2x1.6GHz | 91 MiB/s | 376 MiB/s | 370 MiB/s | 949 MiB/s |
 | gcc-4.8.3 -O2 --march=native / amd64 / Atom N450 2x1.6GHz | 97 MiB/s | 360 MiB/s | 370 MiB/s | 1040 MiB/s |
+| msvc 12.0 /O2 /Ob2 / x64 / Core i7-4960HQ 4x2.6GHz | 1008 MiB/s | 3276 MiB/s | 2016 MiB/s | 5957 MiB/s |
+| gcc-4.8.2 -O3 --march=native / amd64 / Core i7-4960HQ 4x2.6GHz | 1071 MiB/s | 2629 MiB/s | 2022 MiB/s | 6368 MiB/s |
+| gcc-4.8.2 -O2 --march=native / amd64 / Core i7-4960HQ 4x2.6GHz | 1073 MiB/s | 2541 MiB/s | 2021 MiB/s | 6513 MiB/s |
 
