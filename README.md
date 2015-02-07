@@ -15,10 +15,24 @@ Copyright Kai Dietrich <mail@cleeus.de> 2015.
 Hashx4 is licensed under the GPL v3 or later.
 
 
-benchmarks
-==========
+algorithms
+----------
 
-hash-rates in MiB/s
+* *djb2\_32 ref* - This is the well known djb2 hash function from Daniel Bernstein (h\_i+1 = h\_i * 33 + c, h\_0 = 5381).
+	It is included to show a baseline in benchmarks. The implementation is a naive loop you might find in any example code.
+* *djb2\_32 copt* - The same djb2 hash function with an alignment seek
+	to give the compiler a chance to vectorize and/or optimize better.
+* *djb2x4\_128 ref* - Interleaved input on 4 djb2 functions (hence djb2x4), 128bit output. A naive loop implementation that can serve as
+	a reference to check the correctness of the optimized implementations.
+* *djb2x4\_128 copt* - The same djb2x4 function with some alignment hints for the compiler.
+* *djb2x4\_128 sse2* - SSE2 intrinsics implementation.
+* *djb2x4\_128 ssse3* - SSSE3 intrinsics implementation. SSSE3 has many useful new instructions, among them a mighty \_mm\_shuffle\_epi8
+	which solves a problem in the SSE2 implementation.
+
+benchmarks
+----------
+
+hashrates in MiB/s
 
 | cpu/abi/compiler+options | djb2\_32 ref | djb2\_32 copt | djb2x4\_128 ref | djb2x4\_128 copt | djb2x4\_128 sse2 | djb2x4\_128 ssse3 |
 |--------------------------|--------------|---------------|-----------------|------------------|------------------|-------------------|
