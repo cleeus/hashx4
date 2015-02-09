@@ -84,13 +84,48 @@ int hx4_djbx33a_32_copt(const void *buffer, size_t buffer_size, const void *cook
   while(p+15<buffer_end) {
     HX4_ASSUME_ALIGNED(p, 16)
 
-    for(i=0; i<16;i++) {
-    	state = state * 33 + p[i];
+#if 1
+#define HX4_DJBX33A_ROUND(round) \
+    /* state = state * 33 + p[round]; */ \
+    state = (state << 5) + state + p[round]; \
+
+    HX4_DJBX33A_ROUND(0)
+    HX4_DJBX33A_ROUND(1)
+    HX4_DJBX33A_ROUND(2)
+    HX4_DJBX33A_ROUND(3)
+    HX4_DJBX33A_ROUND(4)
+    HX4_DJBX33A_ROUND(5)
+    HX4_DJBX33A_ROUND(6)
+    HX4_DJBX33A_ROUND(7)
+    HX4_DJBX33A_ROUND(8)
+    HX4_DJBX33A_ROUND(9)
+    HX4_DJBX33A_ROUND(10)
+    HX4_DJBX33A_ROUND(11)
+    HX4_DJBX33A_ROUND(12)
+    HX4_DJBX33A_ROUND(13)
+    HX4_DJBX33A_ROUND(14)
+    HX4_DJBX33A_ROUND(15)
+#endif
+
+#if 0
+    for(i=0; i<16; i++) {
+      //state = state*33 + p[i];
+      state = (state << 5) + state + p[i];
     }
+#endif
 
     p+=16;
   }
-  
+#undef HX4_DJBX33A_ROUND
+
+  //hash remainder
+  while(p<buffer_end) {
+    //state = state * 33  + *p;
+    state = (state << 5) + state + p[i];
+    p++;
+  }
+
+ 
   memcpy(out_hash, &state, sizeof(state));
 
   return HX4_ERR_SUCCESS;
@@ -140,7 +175,8 @@ int hx4_x4djbx33a_128_copt(const void *buffer, size_t buffer_size, const void *c
 
   //hash input until p is aligned to alignment_target
   for(i=0; p<buffer_end && i<num_bytes_to_seek; i++) {
-    state[state_i] = state[state_i] * 33  + *p;
+    //state[state_i] = state[state_i] * 33  + *p;
+    state[state_i] = (state[state_i] << 5) + state[state_i]  + *p;
     p++;
     state_i = (state_i+1) % 4;
   }
@@ -161,30 +197,32 @@ int hx4_x4djbx33a_128_copt(const void *buffer, size_t buffer_size, const void *c
   while(p+15<buffer_end) {
     HX4_ASSUME_ALIGNED(p, 16)
 
-    state[0] = state[0] * 33 + p[0];
-    state[1] = state[1] * 33 + p[1];
-    state[2] = state[2] * 33 + p[2];
-    state[3] = state[3] * 33 + p[3];
-    
-    state[0] = state[0] * 33 + p[4];
-    state[1] = state[1] * 33 + p[5];
-    state[2] = state[2] * 33 + p[6];
-    state[3] = state[3] * 33 + p[7];
-    
-    state[0] = state[0] * 33 + p[8];
-    state[1] = state[1] * 33 + p[9];
-    state[2] = state[2] * 33 + p[10];
-    state[3] = state[3] * 33 + p[11];
-    
-    state[0] = state[0] * 33 + p[12];
-    state[1] = state[1] * 33 + p[13];
-    state[2] = state[2] * 33 + p[14];
-    state[3] = state[3] * 33 + p[15];
-    
+#define HX4_DJB2X4_COPT_ROUND(state_i, round) \
+    state[state_i] = (state[state_i] << 5) + state[state_i] + p[round];
+
+    HX4_DJB2X4_COPT_ROUND(0,0)
+    HX4_DJB2X4_COPT_ROUND(1,1)
+    HX4_DJB2X4_COPT_ROUND(2,2)
+    HX4_DJB2X4_COPT_ROUND(3,3)
+    HX4_DJB2X4_COPT_ROUND(0,4)
+    HX4_DJB2X4_COPT_ROUND(1,5)
+    HX4_DJB2X4_COPT_ROUND(2,6)
+    HX4_DJB2X4_COPT_ROUND(3,7)
+    HX4_DJB2X4_COPT_ROUND(0,8)
+    HX4_DJB2X4_COPT_ROUND(1,9)
+    HX4_DJB2X4_COPT_ROUND(2,10)
+    HX4_DJB2X4_COPT_ROUND(3,11)
+    HX4_DJB2X4_COPT_ROUND(0,12)
+    HX4_DJB2X4_COPT_ROUND(1,13)
+    HX4_DJB2X4_COPT_ROUND(2,14)
+    HX4_DJB2X4_COPT_ROUND(3,15)
+
     p+=16;
   }
   
-  //rotate back the states so that the result
+#undef HX4_DJB2X4_COPT_ROUND
+
+  //rotate back the states
   for(i=0; i<state_i; i++) {
     state_tmp = state[3];
     state[3] = state[2];
@@ -193,9 +231,10 @@ int hx4_x4djbx33a_128_copt(const void *buffer, size_t buffer_size, const void *c
     state[0] = state_tmp;
   }
 
-  //process any input that is left
+  //process remainder
   while(p<buffer_end) {
-    state[state_i] = state[state_i] * 33  + *p;
+    //state[state_i] = state[state_i] * 33  + *p;
+    state[state_i] = (state[state_i] << 5) + state[state_i]  + *p;
     p++;
     state_i = (state_i+1) % 4;
   }
@@ -235,7 +274,8 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, const void *c
 
   //hash input until p is aligned to alignment_target
   for(i=0; p<buffer_end && i<num_bytes_to_seek; i++) {
-    state[state_i] = state[state_i] * 33  + *p;
+    //state[state_i] = state[state_i] * 33  + *p;
+    state[state_i] = (state[state_i] << 5) + state[state_i]  + *p;
     p++;
     state_i = (state_i+1) % 4;
   }
@@ -320,7 +360,7 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, const void *c
   //store back state from register into memory
   _mm_store_si128((__m128i*)state, xstate);
   
-  //rotate back the states so that the result
+  //rotate back the states
   for(i=0; i<state_i; i++) {
     state_tmp = state[3];
     state[3] = state[2];
@@ -331,7 +371,8 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, const void *c
 
   //process any input that is left
   while(p<buffer_end) {
-    state[state_i] = state[state_i] * 33  + *p;
+    //state[state_i] = state[state_i] * 33  + *p;
+    state[state_i] = (state[state_i] << 5) + state[state_i]  + *p;
     p++;
     state_i = (state_i+1) % 4;
   }
@@ -367,7 +408,8 @@ int hx4_x4djbx33a_128_ssse3(const void *buffer, size_t buffer_size, const void *
 
   //hash input until p is aligned to alignment_target
   for (i = 0; p<buffer_end && i<num_bytes_to_seek; i++) {
-    state[state_i] = state[state_i] * 33 + *p;
+    //state[state_i] = state[state_i] * 33 + *p;
+    state[state_i] = (state[state_i] << 5) + state[state_i] + *p;
     p++;
     state_i = (state_i + 1) % 4;
   }
@@ -423,7 +465,7 @@ int hx4_x4djbx33a_128_ssse3(const void *buffer, size_t buffer_size, const void *
   //store back state from register into memory
   _mm_store_si128((__m128i*)state, xstate);
 
-  //rotate back the states so that the result
+  //rotate back the states
   for (i = 0; i<state_i; i++) {
     state_tmp = state[3];
     state[3] = state[2];
@@ -434,7 +476,8 @@ int hx4_x4djbx33a_128_ssse3(const void *buffer, size_t buffer_size, const void *
 
   //process any input that is left
   while (p<buffer_end) {
-    state[state_i] = state[state_i] * 33 + *p;
+    //state[state_i] = state[state_i] * 33 + *p;
+    state[state_i] = (state[state_i] << 5) + state[state_i] + *p;   
     p++;
     state_i = (state_i + 1) % 4;
   }
