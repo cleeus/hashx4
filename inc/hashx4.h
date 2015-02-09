@@ -20,6 +20,7 @@
  */
 
 #include <stddef.h>
+#include "hashx4_config.h"
 
 #define HX4_ERR_SUCCESS (0)
 #define HX4_ERR_PARAM_INVALID (-1)
@@ -34,8 +35,14 @@ int hx4_djbx33a_32_ref     (const void *buffer, size_t buffer_size, void *out_ha
 int hx4_djbx33a_32_copt    (const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
 int hx4_x4djbx33a_128_ref  (const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
 int hx4_x4djbx33a_128_copt (const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
+
+#if HX4_HAS_SSE2
 int hx4_x4djbx33a_128_sse2 (const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
+#endif
+
+#if HX4_HAS_SSSE3
 int hx4_x4djbx33a_128_ssse3(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
+#endif
 
 int hx4_siphash24_64_ref   (const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
 

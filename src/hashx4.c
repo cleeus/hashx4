@@ -21,8 +21,15 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "hashx4_config.h"
+
+#if HX4_HAS_SSE2
 #include <emmintrin.h>
+#endif
+
+#if HX4_HAS_SSSE3
 #include <tmmintrin.h>
+#endif
 
 #include "hashx4.h"
 #include "hashx4_util.h"
@@ -198,6 +205,7 @@ int hx4_x4djbx33a_128_copt(const void *buffer, size_t buffer_size, void *out_has
   return HX4_ERR_SUCCESS;
 }
 
+#if HX4_HAS_SSE2
 int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
@@ -254,7 +262,7 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, void *out_has
 #if 0
     //load 16 bytes aligned
     xpin = _mm_load_si128((__m128i*)p);
-#define H4X_SSE2_DJB2ROUND(round) \
+#define HX4_SSE2_DJB2ROUND(round) \
     /* unpack 4 bytes per round */ \
     tmp = _mm_cvtsi128_si32(xpin); \
     xp = _mm_set_epi32( \
@@ -275,7 +283,7 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, void *out_has
 #if 0
     //load 16 bytes aligned
     xpin = _mm_load_si128((__m128i*)p);
-#define H4X_SSE2_DJB2ROUND(round) \
+#define HX4_SSE2_DJB2ROUND(round) \
     /* unpack 4 bytes per round */ \
     tmp = _mm_cvtsi128_si32(xpin); \
     xp = _mm_set_epi32( \
@@ -292,7 +300,7 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, void *out_has
 
 
 #if 1
-#define H4X_SSE2_DJB2ROUND(round) \
+#define HX4_SSE2_DJB2ROUND(round) \
     /* load 4 bytes, expand into xp */ \
     xp = _mm_set_epi32(p[round*4+3], p[round*4+2], p[round*4+1], p[round*4+0]); \
     xp = _mm_add_epi32(xp, xstate); \
@@ -300,13 +308,15 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, void *out_has
     xstate = _mm_add_epi32(xstate, xp);
 #endif
     
-    H4X_SSE2_DJB2ROUND(0)
-    H4X_SSE2_DJB2ROUND(1)
-    H4X_SSE2_DJB2ROUND(2)
-    H4X_SSE2_DJB2ROUND(3)
+    HX4_SSE2_DJB2ROUND(0)
+    HX4_SSE2_DJB2ROUND(1)
+    HX4_SSE2_DJB2ROUND(2)
+    HX4_SSE2_DJB2ROUND(3)
     
     p+=16;
   }
+#undef HX4_SSE2_DJB2ROUND
+
   //store back state from register into memory
   _mm_store_si128((__m128i*)state, xstate);
   
@@ -330,7 +340,9 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, void *out_has
 
   return HX4_ERR_SUCCESS;
 }
+#endif //HX4_HAS_SSE2
 
+#if HX4_HAS_SSSE3
 int hx4_x4djbx33a_128_ssse3(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
@@ -392,20 +404,22 @@ int hx4_x4djbx33a_128_ssse3(const void *buffer, size_t buffer_size, void *out_ha
     xpin = _mm_load_si128((__m128i*)p);
     xpin = _mm_shuffle_epi8(xpin, xshuffle);
 
-#define H4X_SSSE3_DJB2ROUND(round) \
+#define HX4_SSSE3_DJB2ROUND(round) \
     xp = _mm_srli_epi32(xpin, 8*round); \
     xp = _mm_and_si128(xp, xbmask); \
     xp = _mm_add_epi32(xp, xstate); \
     xstate = _mm_slli_epi32(xstate, 5); \
     xstate = _mm_add_epi32(xstate, xp); \
 
-    H4X_SSSE3_DJB2ROUND(0)
-    H4X_SSSE3_DJB2ROUND(1)
-    H4X_SSSE3_DJB2ROUND(2)
-    H4X_SSSE3_DJB2ROUND(3)
+    HX4_SSSE3_DJB2ROUND(0)
+    HX4_SSSE3_DJB2ROUND(1)
+    HX4_SSSE3_DJB2ROUND(2)
+    HX4_SSSE3_DJB2ROUND(3)
 
     p += 16;
   }
+#undef HX4_SSSE3_DJB2ROUND
+
   //store back state from register into memory
   _mm_store_si128((__m128i*)state, xstate);
 
@@ -429,4 +443,5 @@ int hx4_x4djbx33a_128_ssse3(const void *buffer, size_t buffer_size, void *out_ha
 
   return HX4_ERR_SUCCESS;
 }
+#endif //HX4_HAS_SSSE3
 
