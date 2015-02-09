@@ -22,12 +22,12 @@ algorithms
 	It is included to show a baseline in benchmarks. The implementation is a naive loop you might find in any example code.
 * *djbx33a\_32 copt* - The same DJBX33A hash function with an alignment seek
 	to give the compiler a chance to vectorize and/or optimize better.
-* *djbx33ax4\_128 ref* - Interleaved input on 4 djbx33a functions (hence djbx33ax4), 128bit output.
+* *x4djbx33a\_128 ref* - Interleaved input on 4 djbx33a functions (hence x4djbx33a), 128bit output.
 	A naive loop implementation that can serve as
 	a reference to check the correctness of the optimized implementations.
-* *djbx33ax4\_128 copt* - The same djbx33ax4 function with some alignment hints for the compiler.
-* *djbx33ax4\_128 sse2* - SSE2 intrinsics implementation.
-* *djbx33ax4\_128 ssse3* - SSSE3 intrinsics implementation. SSSE3 has many useful new instructions, among them a mighty \_mm\_shuffle\_epi8
+* *x4djbx33a\_128 copt* - The same x4djbx33a function with some alignment hints for the compiler.
+* *x4djbx33a\_128 sse2* - SSE2 intrinsics implementation.
+* *x4djbx33a\_128 ssse3* - SSSE3 intrinsics implementation. SSSE3 has many useful new instructions, among them a mighty \_mm\_shuffle\_epi8
 	which solves a problem in the SSE2 implementation.
 
 benchmarks
@@ -35,7 +35,7 @@ benchmarks
 
 hashrates in MiB/s
 
-| cpu/abi/compiler+options | x33a\_32 ref | x33a\_32 copt | x33ax4\_128 ref | x33ax4\_128 copt | x33ax4\_128 sse2 | x33ax4\_128 ssse3 |
+| cpu/abi/compiler+options | djb x33a\_32 ref | djb x33a\_32 copt | djb x33a\_128 ref | x4djb x33a\_128 copt | x4djb x33a\_128 sse2 | x4djb x33a\_128 ssse3 |
 |--------------------------|--------------|---------------|-----------------|------------------|------------------|-------------------|
 | Atom N450 2x1.6GHz / amd64 / gcc-4.8 -O3 -march=native      |  376 |  360 |   91 |  376 |  370 |  949 |
 | Atom N450 2x1.6GHz / amd64 / gcc-4.8 -O2 -march=native      |  374 |  234 |   97 |  360 |  370 | 1040 |

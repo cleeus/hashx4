@@ -26,11 +26,21 @@
 #define HX4_ERR_BUFFER_TOO_SMALL (-2)
 #define HX4_ERR_OVERLAP (-3)
 
-int hashx4_djbx33a_32_ref     (const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
-int hashx4_djbx33a_32_copt    (const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
-int hashx4_djbx33ax4_128_ref  (const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
-int hashx4_djbx33ax4_128_copt (const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
-int hashx4_djbx33ax4_128_sse2 (const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
-int hashx4_djbx33ax4_128_ssse3(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int hx4_djbx33a_32_ref     (const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
+int hx4_djbx33a_32_copt    (const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
+int hx4_x4djbx33a_128_ref  (const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
+int hx4_x4djbx33a_128_copt (const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
+int hx4_x4djbx33a_128_sse2 (const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
+int hx4_x4djbx33a_128_ssse3(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
+
+int hx4_siphash24_64_ref   (const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

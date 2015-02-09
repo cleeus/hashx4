@@ -25,44 +25,16 @@
 #include <tmmintrin.h>
 
 #include "hashx4.h"
-
-static int ptr_in_buffer(const void *ptr, const void *buffer, size_t buffer_size) {
-  return  (ptr >= buffer) && ((const uint8_t*)ptr < ((const uint8_t*)buffer + buffer_size));
-}
-
-static int buffers_overlapping(const void *buffer1, size_t buffer1_size, const void *buffer2, size_t buffer2_size) {
-  return ptr_in_buffer(buffer1, buffer2, buffer2_size) ||
-    ptr_in_buffer((const uint8_t*)buffer1+buffer1_size-1, buffer2, buffer2_size) ||
-    ptr_in_buffer(buffer2, buffer1, buffer1_size) ||
-    ptr_in_buffer((const uint8_t*)buffer2+buffer2_size-1, buffer1, buffer1_size);
-}
-
-int check_params(size_t sizeof_state, const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
-  if(!buffer || !out_hash) {
-    return HX4_ERR_PARAM_INVALID;
-  }
-  if(out_hash_size < sizeof_state) {
-    return HX4_ERR_BUFFER_TOO_SMALL;
-  }
-  if(buffers_overlapping(buffer, buffer_size, out_hash, out_hash_size)) {
-    return HX4_ERR_OVERLAP;
-  }
-
-  return HX4_ERR_SUCCESS;
-}
-
-static int num_bytes_to_alignment(const void *ptr) {
-  return ((size_t)ptr) % 16 == 0 ? 0 : 16 - (((size_t)ptr) % 16);
-}
+#include "hashx4_util.h"
 
 
-int hashx4_djbx33a_32_ref(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+int hx4_djbx33a_32_ref(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
   uint32_t state = 5381;
   int rc;
 
-  rc = check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
+  rc = hx4_check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
   if(rc != HX4_ERR_SUCCESS) {
     return rc;
   }
@@ -78,15 +50,15 @@ int hashx4_djbx33a_32_ref(const void *buffer, size_t buffer_size, void *out_hash
   return HX4_ERR_SUCCESS;
 }
 
-int hashx4_djbx33a_32_copt(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+int hx4_djbx33a_32_copt(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
-  const int num_bytes_to_seek = num_bytes_to_alignment(buffer);
+  const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer);
   uint32_t state = 5381;
   int rc;
   int i;
 
-  rc = check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
+  rc = hx4_check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
   if(rc != HX4_ERR_SUCCESS) {
     return rc;
   }
@@ -99,19 +71,12 @@ int hashx4_djbx33a_32_copt(const void *buffer, size_t buffer_size, void *out_has
     p++;
   }
 
-#ifdef __GNUC__
-  p = __builtin_assume_aligned(p, 16);
-#elif _MSC_VER
-  __assume((size_t)p % 16 == 0);
-#endif
+  HX4_ASSUME_ALIGNED(p, 16)
 
   //main processing loop
   while(p+15<buffer_end) {
-#ifdef __GNUC__
-    p = __builtin_assume_aligned(p, 16);
-#elif _MSC_VER
-    __assume((size_t)p % 16 == 0);
-#endif
+    HX4_ASSUME_ALIGNED(p, 16)
+
     for(i=0; i<16;i++) {
     	state = state * 33 + p[i];
     }
@@ -125,14 +90,14 @@ int hashx4_djbx33a_32_copt(const void *buffer, size_t buffer_size, void *out_has
 }
 
 
-int hashx4_djbx33ax4_128_ref(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+int hx4_x4djbx33a_128_ref(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
   uint32_t state[] = { 5381, 5381, 5381, 5381 };
   int state_i=0;
   int rc;
 
-  rc = check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
+  rc = hx4_check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
   if(rc != HX4_ERR_SUCCESS) {
     return rc;
   }
@@ -149,17 +114,17 @@ int hashx4_djbx33ax4_128_ref(const void *buffer, size_t buffer_size, void *out_h
   return HX4_ERR_SUCCESS;
 }
 
-int hashx4_djbx33ax4_128_copt(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+int hx4_x4djbx33a_128_copt(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
-  const int num_bytes_to_seek = num_bytes_to_alignment(buffer);
+  const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer);
   uint32_t state[] = { 5381, 5381, 5381, 5381 };
   uint32_t state_tmp;
   int state_i=0;
   int rc;
   int i;
 
-  rc = check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
+  rc = hx4_check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
   if(rc != HX4_ERR_SUCCESS) {
     return rc;
   }
@@ -173,11 +138,7 @@ int hashx4_djbx33ax4_128_copt(const void *buffer, size_t buffer_size, void *out_
     state_i = (state_i+1) % 4;
   }
 
-#ifdef __GNUC__
-  p = __builtin_assume_aligned(p, 16);
-#elif _MSC_VER
-  __assume((size_t)p % 16 == 0);
-#endif
+  HX4_ASSUME_ALIGNED(p, 16)
 
   //rotate states to match position on the input stream
   //so that the main loop can be simple
@@ -191,11 +152,7 @@ int hashx4_djbx33ax4_128_copt(const void *buffer, size_t buffer_size, void *out_
 
   //main processing loop
   while(p+15<buffer_end) {
-#ifdef __GNUC__
-    p = __builtin_assume_aligned(p, 16);
-#elif _MSC_VER
-    __assume((size_t)p % 16 == 0);
-#endif
+    HX4_ASSUME_ALIGNED(p, 16)
 
     state[0] = state[0] * 33 + p[0];
     state[1] = state[1] * 33 + p[1];
@@ -241,16 +198,12 @@ int hashx4_djbx33ax4_128_copt(const void *buffer, size_t buffer_size, void *out_
   return HX4_ERR_SUCCESS;
 }
 
-int hashx4_djbx33ax4_128_sse2(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
-  const int num_bytes_to_seek = num_bytes_to_alignment(buffer);
+  const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer);
 
-#ifdef __GNUC__
-  uint32_t state[] __attribute__((aligned(16))) = { 5381, 5381, 5381, 5381 };
-#elif _MSC_VER
-  _declspec(align(16)) uint32_t state[] = { 5381, 5381, 5381, 5381 };
-#endif
+  HX4_ALIGNED(uint32_t state[], 16) = { 5381, 5381, 5381, 5381 };
 
   uint32_t state_tmp;
   __m128i xstate;
@@ -265,7 +218,7 @@ int hashx4_djbx33ax4_128_sse2(const void *buffer, size_t buffer_size, void *out_
 #endif
 
 
-  rc = check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
+  rc = hx4_check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
   if(rc != HX4_ERR_SUCCESS) {
     return rc;
   }
@@ -279,11 +232,7 @@ int hashx4_djbx33ax4_128_sse2(const void *buffer, size_t buffer_size, void *out_
     state_i = (state_i+1) % 4;
   }
 
-#ifdef __GNUC__
-  p = __builtin_assume_aligned(p, 16);
-#elif _MSC_VER
-  __assume((size_t)p % 16 == 0);
-#endif
+  HX4_ASSUME_ALIGNED(p, 16)
 
   //rotate states to match position on the input stream
   //so that the main loop can be simple
@@ -298,13 +247,9 @@ int hashx4_djbx33ax4_128_sse2(const void *buffer, size_t buffer_size, void *out_
   //transfer state into register
   xstate = _mm_load_si128((__m128i*)state);
 
-  //main processing loop
+ //main processing loop
   while(p+15<buffer_end) {
-#ifdef __GNUC__
-    p = __builtin_assume_aligned(p, 16);
-#elif _MSC_VER
-    __assume((size_t)p % 16 == 0);
-#endif
+    HX4_ASSUME_ALIGNED(p, 16)
 
 #if 0
     //load 16 bytes aligned
@@ -386,16 +331,11 @@ int hashx4_djbx33ax4_128_sse2(const void *buffer, size_t buffer_size, void *out_
   return HX4_ERR_SUCCESS;
 }
 
-int hashx4_djbx33ax4_128_ssse3(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+int hx4_x4djbx33a_128_ssse3(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
-  const int num_bytes_to_seek = num_bytes_to_alignment(buffer);
-
-#ifdef __GNUC__
-  uint32_t state[] __attribute__((aligned(16))) = { 5381, 5381, 5381, 5381 };
-#elif _MSC_VER
-  _declspec(align(16)) uint32_t state[] = { 5381, 5381, 5381, 5381 };
-#endif
+  const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer);
+  HX4_ALIGNED(uint32_t state[], 16) = { 5381, 5381, 5381, 5381 };
   uint32_t state_tmp;
   __m128i xstate;
   __m128i xp;
@@ -406,7 +346,7 @@ int hashx4_djbx33ax4_128_ssse3(const void *buffer, size_t buffer_size, void *out
   int rc;
   int i;
 
-  rc = check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
+  rc = hx4_check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
   if (rc != HX4_ERR_SUCCESS) {
     return rc;
   }
@@ -420,11 +360,7 @@ int hashx4_djbx33ax4_128_ssse3(const void *buffer, size_t buffer_size, void *out
     state_i = (state_i + 1) % 4;
   }
 
-#ifdef __GNUC__
-  p = __builtin_assume_aligned(p, 16);
-#elif _MSC_VER
-  __assume((size_t)p % 16 == 0);
-#endif
+  HX4_ASSUME_ALIGNED(p, 16)
 
   //rotate states to match position on the input stream
   //so that the main loop can be simple
@@ -450,11 +386,7 @@ int hashx4_djbx33ax4_128_ssse3(const void *buffer, size_t buffer_size, void *out
 
   //main processing loop
   while (p + 15<buffer_end) {
-#ifdef __GNUC__
-    p = __builtin_assume_aligned(p, 16);
-#elif _MSC_VER
-    __assume((size_t)p % 16 == 0);
-#endif
+    HX4_ASSUME_ALIGNED(p, 16)
 
     //load 16 bytes aligned
     xpin = _mm_load_si128((__m128i*)p);
