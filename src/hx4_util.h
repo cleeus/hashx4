@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-int hx4_check_params(size_t sizeof_state, const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size);
+int hx4_check_params(size_t sizeof_state, const void *in, size_t in_sz, const void *cookie, size_t cookie_sz, void *out, size_t out_sz);
 int hx4_bytes_to_aligned(const void *ptr);
  
 #ifdef __cplusplus

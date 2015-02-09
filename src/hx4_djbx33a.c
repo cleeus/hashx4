@@ -32,16 +32,16 @@
 #endif
 
 #include "hashx4.h"
-#include "hashx4_util.h"
+#include "hx4_util.h"
 
 
-int hx4_djbx33a_32_ref(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+int hx4_djbx33a_32_ref(const void *buffer, size_t buffer_size, const void *cookie, size_t cookie_sz, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
   uint32_t state = 5381;
   int rc;
 
-  rc = hx4_check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
+  rc = hx4_check_params(sizeof(state), buffer, buffer_size, cookie, cookie_sz, out_hash, out_hash_size);
   if(rc != HX4_ERR_SUCCESS) {
     return rc;
   }
@@ -57,7 +57,7 @@ int hx4_djbx33a_32_ref(const void *buffer, size_t buffer_size, void *out_hash, s
   return HX4_ERR_SUCCESS;
 }
 
-int hx4_djbx33a_32_copt(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+int hx4_djbx33a_32_copt(const void *buffer, size_t buffer_size, const void *cookie, size_t cookie_sz, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
   const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer);
@@ -65,7 +65,7 @@ int hx4_djbx33a_32_copt(const void *buffer, size_t buffer_size, void *out_hash, 
   int rc;
   int i;
 
-  rc = hx4_check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
+  rc = hx4_check_params(sizeof(state), buffer, buffer_size, cookie, cookie_sz, out_hash, out_hash_size);
   if(rc != HX4_ERR_SUCCESS) {
     return rc;
   }
@@ -97,14 +97,14 @@ int hx4_djbx33a_32_copt(const void *buffer, size_t buffer_size, void *out_hash, 
 }
 
 
-int hx4_x4djbx33a_128_ref(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+int hx4_x4djbx33a_128_ref(const void *buffer, size_t buffer_size, const void *cookie, size_t cookie_sz, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
   uint32_t state[] = { 5381, 5381, 5381, 5381 };
   int state_i=0;
   int rc;
 
-  rc = hx4_check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
+  rc = hx4_check_params(sizeof(state), buffer, buffer_size, cookie, cookie_sz, out_hash, out_hash_size);
   if(rc != HX4_ERR_SUCCESS) {
     return rc;
   }
@@ -121,7 +121,7 @@ int hx4_x4djbx33a_128_ref(const void *buffer, size_t buffer_size, void *out_hash
   return HX4_ERR_SUCCESS;
 }
 
-int hx4_x4djbx33a_128_copt(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+int hx4_x4djbx33a_128_copt(const void *buffer, size_t buffer_size, const void *cookie, size_t cookie_sz, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
   const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer);
@@ -131,7 +131,7 @@ int hx4_x4djbx33a_128_copt(const void *buffer, size_t buffer_size, void *out_has
   int rc;
   int i;
 
-  rc = hx4_check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
+  rc = hx4_check_params(sizeof(state), buffer, buffer_size, cookie, cookie_sz, out_hash, out_hash_size);
   if(rc != HX4_ERR_SUCCESS) {
     return rc;
   }
@@ -206,7 +206,7 @@ int hx4_x4djbx33a_128_copt(const void *buffer, size_t buffer_size, void *out_has
 }
 
 #if HX4_HAS_SSE2
-int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, const void *cookie, size_t cookie_sz, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
   const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer);
@@ -226,7 +226,7 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, void *out_has
 #endif
 
 
-  rc = hx4_check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
+  rc = hx4_check_params(sizeof(state), buffer, buffer_size, cookie, cookie_sz, out_hash, out_hash_size);
   if(rc != HX4_ERR_SUCCESS) {
     return rc;
   }
@@ -343,7 +343,7 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, void *out_has
 #endif //HX4_HAS_SSE2
 
 #if HX4_HAS_SSSE3
-int hx4_x4djbx33a_128_ssse3(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
+int hx4_x4djbx33a_128_ssse3(const void *buffer, size_t buffer_size, const void *cookie, size_t cookie_sz, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
   const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer);
@@ -358,7 +358,7 @@ int hx4_x4djbx33a_128_ssse3(const void *buffer, size_t buffer_size, void *out_ha
   int rc;
   int i;
 
-  rc = hx4_check_params(sizeof(state), buffer, buffer_size, out_hash, out_hash_size);
+  rc = hx4_check_params(sizeof(state), buffer, buffer_size, cookie, cookie_sz, out_hash, out_hash_size);
   if (rc != HX4_ERR_SUCCESS) {
     return rc;
   }

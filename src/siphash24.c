@@ -13,10 +13,10 @@
    this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 */
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "hashx4.h"
+#include "hx4_util.h"
 
 typedef uint64_t u64;
 typedef uint32_t u32;
@@ -82,19 +82,12 @@ static int crypto_auth( unsigned char *out, const unsigned char *in, unsigned lo
   switch( left )
   {
   case 7: b |= ( ( u64 )in[ 6] )  << 48;
-
   case 6: b |= ( ( u64 )in[ 5] )  << 40;
-
   case 5: b |= ( ( u64 )in[ 4] )  << 32;
-
   case 4: b |= ( ( u64 )in[ 3] )  << 24;
-
   case 3: b |= ( ( u64 )in[ 2] )  << 16;
-
   case 2: b |= ( ( u64 )in[ 1] )  <<  8;
-
   case 1: b |= ( ( u64 )in[ 0] ); break;
-
   case 0: break;
   }
 
@@ -114,14 +107,15 @@ static int crypto_auth( unsigned char *out, const unsigned char *in, unsigned lo
   return 0;
 }
 
-int hx4_siphash24_64_ref(const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
-  uint8_t hash_secret[128/8];
-  int i;
-  for(i=0; i<sizeof(hash_secret); i++) {
-    hash_secret[i] = i;
+int hx4_siphash24_64_ref(const void *in, size_t in_sz, const void *cookie, size_t cookie_sz, void *out, size_t out_sz) {
+  int rc;
+
+  rc = hx4_check_params(64/8, in, in_sz, cookie, cookie_sz, out, out_sz);
+  if(rc != HX4_ERR_SUCCESS) {
+    return rc;
   }
 
-  crypto_auth(out_hash, buffer, buffer_size, (const unsigned char*)hash_secret);
+  crypto_auth(out, in, in_sz, (const unsigned char*)cookie);
   
   return HX4_ERR_SUCCESS;
 }

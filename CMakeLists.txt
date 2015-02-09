@@ -20,10 +20,12 @@ add_definitions(
 add_executable(testhx4
   util/testhx4.c
  
-  src/hashx4_util.h
-  src/hashx4_util.c
-  src/hashx4.c
+  src/hx4_util.h
+  src/hx4_util.c
+  src/hx4_djbx33a.c
   src/siphash24.c
+  src/hx4_siphash24.c
 
   inc/hashx4.h
+  inc/hashx4_config.h
 )

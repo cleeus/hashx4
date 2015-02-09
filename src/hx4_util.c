@@ -1,7 +1,7 @@
 #include <stdint.h>
 
 #include "hashx4.h"
-#include "hashx4_util.h"
+#include "hx4_util.h"
 
 static int ptr_in_buffer(const void *ptr, const void *buffer, size_t buffer_size) {
   return  (ptr >= buffer) && ((const uint8_t*)ptr < ((const uint8_t*)buffer + buffer_size));
@@ -14,14 +14,23 @@ static int buffers_overlapping(const void *buffer1, size_t buffer1_size, const v
     ptr_in_buffer((const uint8_t*)buffer2+buffer2_size-1, buffer1, buffer1_size);
 }
 
-int hx4_check_params(size_t sizeof_state, const void *buffer, size_t buffer_size, void *out_hash, size_t out_hash_size) {
-  if(!buffer || !out_hash) {
+int hx4_check_params(size_t sizeof_state, const void *in, size_t in_sz, const void *cookie, size_t cookie_sz, void *out, size_t out_sz) {
+  if(!in || !cookie || !out) {
     return HX4_ERR_PARAM_INVALID;
   }
-  if(out_hash_size < sizeof_state) {
+  if(out_sz < sizeof_state) {
     return HX4_ERR_BUFFER_TOO_SMALL;
   }
-  if(buffers_overlapping(buffer, buffer_size, out_hash, out_hash_size)) {
+  if(cookie_sz < 128/8) {
+    return HX4_ERR_COOKIE_TOO_SMALL;
+  }
+  if(buffers_overlapping(in, in_sz, out_sz, out_sz)) {
+    return HX4_ERR_OVERLAP;
+  }
+  if(buffers_overlapping(in, in_sz, cookie, cookie_sz)) {
+    return HX4_ERR_OVERLAP;
+  }
+  if(buffers_overlapping(out, out_sz, cookie, cookie_sz)) {
     return HX4_ERR_OVERLAP;
   }
 

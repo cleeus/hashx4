@@ -73,7 +73,7 @@ float MiB_per_s(size_t bytes, const hx_time *start, const hx_time *end) {
 }
 
 #define HX4_PERF_TEST_IMPL(hash_function, output_length_bits) \
-static int test_##hash_function##_performance(FILE *stream, const void *random_buffer, size_t random_buffer_size) { \
+static int test_##hash_function##_performance(FILE *stream, const void *in, size_t in_sz, const void *cookie, size_t cookie_sz) { \
   int rc = 0; \
   hx_time start; \
   hx_time stop; \
@@ -84,11 +84,11 @@ static int test_##hash_function##_performance(FILE *stream, const void *random_b
   start = hx_gettime(); \
   while (timedelta < 3.0) { \
     repeat_count++; \
-    rc += hash_function(random_buffer, random_buffer_size, hash_output, sizeof(hash_output)); \
+    rc += hash_function(in, in_sz, cookie, cookie_sz, hash_output, sizeof(hash_output)); \
     stop = hx_gettime(); \
     timedelta = hx_timedelta_s(&start, &stop); \
   } \
-  fprintf(stream, "\thashed %f MiB/s\n", MiB_per_s(random_buffer_size*repeat_count, &start, &stop)); \
+  fprintf(stream, "\thashed %f MiB/s\n", MiB_per_s(in_sz*repeat_count, &start, &stop)); \
   return rc; \
 } \
 
@@ -105,7 +105,7 @@ HX4_PERF_TEST_IMPL(hx4_x4djbx33a_128_ssse3, 128)
 #endif
 HX4_PERF_TEST_IMPL(hx4_siphash24_64_ref, 64)
 
-static int test_hx4_x4djbx33a_128_all_correctness(FILE *stream, const void *random_buffer, size_t random_buffer_size) {
+static int test_hx4_x4djbx33a_128_all_correctness(FILE *stream, const void *in, size_t in_sz, const void *cookie, size_t cookie_sz) {
   int rc = 0;
   int i;
   uint8_t hash_output_ref[128/8];
@@ -117,33 +117,33 @@ static int test_hx4_x4djbx33a_128_all_correctness(FILE *stream, const void *rand
   uint8_t hash_output_ssse3[128 / 8];
 #endif
 
-  if(random_buffer_size < 1024) {
-    fprintf(stream, "\trandom buffer too small\n");
+  if(in_sz < 1024) {
+    fprintf(stream, "\tinput buffer too small\n");
     return 1;
   }
 
-  random_buffer_size /= 1024;
-  if(random_buffer_size < 1024) {
-    random_buffer_size = 1024;
+  in_sz /= 1024;
+  if(in_sz < 1024) {
+    in_sz = 1024;
   }
 
-  for(i=0; i<32 && i<random_buffer_size; i++) { 
-    rc = hx4_x4djbx33a_128_ref((uint8_t*)random_buffer+i, random_buffer_size-i, hash_output_ref, sizeof(hash_output_ref));
+  for(i=0; i<32 && i<in_sz; i++) { 
+    rc = hx4_x4djbx33a_128_ref((uint8_t*)in+i, in_sz-i, cookie, cookie_sz, hash_output_ref, sizeof(hash_output_ref));
     if(rc != HX4_ERR_SUCCESS) {
       return rc;
     }
-    rc = hx4_x4djbx33a_128_copt((uint8_t*)random_buffer+i, random_buffer_size-i, hash_output_copt, sizeof(hash_output_copt));
+    rc = hx4_x4djbx33a_128_copt((uint8_t*)in+i, in_sz-i, cookie, cookie_sz, hash_output_copt, sizeof(hash_output_copt));
     if(rc != HX4_ERR_SUCCESS) {
       return rc;
     }
 #if HX4_HAS_SSE2
-    rc = hx4_x4djbx33a_128_sse2((uint8_t*)random_buffer+i, random_buffer_size-i, hash_output_sse2, sizeof(hash_output_sse2));
+    rc = hx4_x4djbx33a_128_sse2((uint8_t*)in+i, in_sz-i, cookie, cookie_sz, hash_output_sse2, sizeof(hash_output_sse2));
     if(rc != HX4_ERR_SUCCESS) {
       return rc;
     }
 #endif
 #if HX4_HAS_SSSE3
-    rc = hx4_x4djbx33a_128_ssse3((uint8_t*)random_buffer + i, random_buffer_size - i, hash_output_ssse3, sizeof(hash_output_ssse3));
+    rc = hx4_x4djbx33a_128_ssse3((uint8_t*)in+i, in_sz-i, cookie, cookie_sz, hash_output_ssse3, sizeof(hash_output_ssse3));
     if (rc != HX4_ERR_SUCCESS) {
       return rc;
     }
@@ -172,7 +172,7 @@ static int test_hx4_x4djbx33a_128_all_correctness(FILE *stream, const void *rand
 }
 
 
-typedef int (*test_function_t)(FILE*, const void *, size_t);
+typedef int (*test_function_t)(FILE*, const void *, size_t, const void *, size_t);
 typedef struct {
   test_function_t function;
   const char *name;
@@ -197,12 +197,14 @@ int main(int argc, char **argv) {
   int i = 0;
   unsigned char *random_buffer = NULL;
   const int random_buffer_size = 1024*1024*512 + 23;
+  uint8_t cookie[128/8];
   
   random_buffer = malloc(random_buffer_size);
   if(!random_buffer) {
     return -1;
   }
   init_random_buffer(random_buffer, random_buffer_size);
+  init_random_buffer(cookie, sizeof(cookie));
 
   test_t tests[] = {
     TEST_ITEM(test_hx4_djbx33a_32_ref_performance)
@@ -221,7 +223,7 @@ int main(int argc, char **argv) {
 
   for(i=0; i<sizeof(tests)/sizeof(test_t); i++) {
     printf("> start executing test: %s\n", tests[i].name); 
-    temp = tests[i].function(stdout, random_buffer, random_buffer_size);
+    temp = tests[i].function(stdout, random_buffer, random_buffer_size, cookie, sizeof(cookie));
     printf("< done executing test, result: %d\n", temp);
     test_result += temp < 0 ? -temp : temp;
   }
