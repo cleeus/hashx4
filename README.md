@@ -50,4 +50,23 @@ hashrates in MiB/s
 | Core i7 3632QM 4x2.2GHz / amd64 | gcc-4.8 -O2 -mssse3           | 1007 | 1312 |  754 | 2445 | 2251 | 5188 |
 
 
+lessons learned
+---------------
+
+As one can see in the benchmarks: beating a modern compiler is hard. Both gcc and msvc do a good job optimizing
+the C implementations. The author has not yet found a SSE2 implementation that beats the C reference on all
+platforms. While experimenting with the SSE2 instruction set, the author recognized that the data layout was not very
+well suited for the instruction set and algorithm.
+Alot of SSE2 performance gains come from reading input data in
+aligned 128bit chunks (movdqa). If the data to be processed is layed out such that this is possible,
+all else follows naturally.
+In case of the x4djb algorithms, the bytes had to be reordered from sequential to parallel
+(0123012301230123 -> 0000111122223333).
+This is similar to a matrix-transpose, but on a single 128bit register across the four 32bit dwords.
+SSE2 has shuffle instructions, but for 16bit words, not for single bytes. This means the shuffle
+needed to be emulated. The author tried many variations of reading and shuffling inputs in SSE2 but it
+remains the problematic part in the SSE2 implementation. SSSE3 added the \_mm\_shuffle\_epi8 instruction.
+This solved the problem and allowed a consciese and very fast vectorized solution that stands up to the
+expecations.
+
 
