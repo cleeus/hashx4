@@ -256,7 +256,6 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, const void *c
 
   uint32_t state_tmp;
   __m128i xstate;
-  __m128i xp;
   __m128i xpin;
   __m128i xtmp;
   __m128i xmask0;
@@ -311,93 +310,89 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, const void *c
     //load 16 bytes aligned
     xpin = _mm_load_si128((__m128i*)p);
 
-    //load state into xp, so we can calculate xp = xstate + p
-    xp = xstate;
+    //xstate = xstate * 33
+    xtmp = _mm_slli_epi32(xstate, 5);
+    xstate = _mm_add_epi32(xstate, xtmp);
+    //now add input bytes, one by one
     //dword0,byte0
     //no shift needed for this one
     xtmp = _mm_and_si128(xpin, xmask0);
-    xp = _mm_add_epi32(xp, xtmp);
+    xstate = _mm_add_epi32(xstate, xtmp);
     //dword0,byte1
     xtmp = _mm_slli_si128(xpin, 3);
     xtmp = _mm_and_si128(xtmp, xmask1);
-    xp = _mm_add_epi32(xp, xtmp);
+    xstate = _mm_add_epi32(xstate, xtmp);
     //dword0,byte2
     xtmp = _mm_slli_si128(xpin, 6);
     xtmp = _mm_and_si128(xtmp, xmask2);
-    xp = _mm_add_epi32(xp, xtmp);
+    xstate = _mm_add_epi32(xstate, xtmp);
     //dword0,byte3
     xtmp = _mm_slli_si128(xpin, 9);
     xtmp = _mm_and_si128(xtmp, xmask3);
-    xp = _mm_add_epi32(xp, xtmp);
-    // now xp = xstate+p and we complete with xstate = xstate << 5 + xp
-    xstate = _mm_slli_epi32(xstate, 5);
-    xstate = _mm_add_epi32(xstate, xp);
+    xstate = _mm_add_epi32(xstate, xtmp);
 
-    //load state into xp, so we can calculate xp = xstate + p
-    xp = xstate;
+    //xstate = xstate * 33
+    xtmp = _mm_slli_epi32(xstate, 5);
+    xstate = _mm_add_epi32(xstate, xtmp);
+    //now add input bytes, one by one
     //dword1,byte0
     xtmp = _mm_srli_si128(xpin, 4);
     xtmp = _mm_and_si128(xtmp, xmask0);
-    xp = _mm_add_epi32(xp, xtmp);
+    xstate = _mm_add_epi32(xstate, xtmp);
     //dword1,byte1
     xtmp = _mm_srli_si128(xpin, 1);
     xtmp = _mm_and_si128(xtmp, xmask1);
-    xp = _mm_add_epi32(xp, xtmp);
+    xstate = _mm_add_epi32(xstate, xtmp);
     //dword1,byte2
     xtmp = _mm_slli_si128(xpin, 2);
     xtmp = _mm_and_si128(xtmp, xmask2);
-    xp = _mm_add_epi32(xp, xtmp);
+    xstate = _mm_add_epi32(xstate, xtmp);
     //dword1,byte3
     xtmp = _mm_slli_si128(xpin, 5);
     xtmp = _mm_and_si128(xtmp, xmask3);
-    xp = _mm_add_epi32(xp, xtmp);
-    // now xp = xstate+p and we complete with xstate = xstate << 5 + xp
-    xstate = _mm_slli_epi32(xstate, 5);
-    xstate = _mm_add_epi32(xstate, xp);
+    xstate = _mm_add_epi32(xstate, xtmp);
 
-    //load state into xp, so we can calculate xp = xstate + p
-    xp = xstate;
+    //xstate = xstate * 33
+    xtmp = _mm_slli_epi32(xstate, 5);
+    xstate = _mm_add_epi32(xstate, xtmp);
+    //now add input bytes, one by one
     //dword2,byte0
     xtmp = _mm_srli_si128(xpin, 8);
     xtmp = _mm_and_si128(xtmp, xmask0);
-    xp = _mm_add_epi32(xp, xtmp);
+    xstate = _mm_add_epi32(xstate, xtmp);
     //dword2,byte1
     xtmp = _mm_srli_si128(xpin, 5);
     xtmp = _mm_and_si128(xtmp, xmask1);
-    xp = _mm_add_epi32(xp, xtmp);
+    xstate = _mm_add_epi32(xstate, xtmp);
     //dword2,byte2
     xtmp = _mm_srli_si128(xpin, 2);
     xtmp = _mm_and_si128(xtmp, xmask2);
-    xp = _mm_add_epi32(xp, xtmp);
+    xstate = _mm_add_epi32(xstate, xtmp);
     //dword2,byte3
     xtmp = _mm_slli_si128(xpin, 1);
     xtmp = _mm_and_si128(xtmp, xmask3);
-    xp = _mm_add_epi32(xp, xtmp);
-    // now xp = xstate+p and we complete with xstate = xstate << 5 + xp
-    xstate = _mm_slli_epi32(xstate, 5);
-    xstate = _mm_add_epi32(xstate, xp);
+    xstate = _mm_add_epi32(xstate, xtmp);
 
-    //load xstate so we can calculate xp = xstate + xp
-    xp = xstate;
+    //xstate = xstate * 33
+    xtmp = _mm_slli_epi32(xstate, 5);
+    xstate = _mm_add_epi32(xstate, xtmp);
+    //now add input bytes, one by one
     //dword3,byte0
     xtmp = _mm_srli_si128(xpin, 12);
     xtmp = _mm_and_si128(xtmp, xmask0);
-    xp = _mm_add_epi32(xp, xtmp);
+    xstate = _mm_add_epi32(xstate, xtmp);
     //dword3,byte1
     xtmp = _mm_srli_si128(xpin, 9);
     xtmp = _mm_and_si128(xtmp, xmask1);
-    xp = _mm_add_epi32(xp, xtmp);
+    xstate = _mm_add_epi32(xstate, xtmp);
     //dword3,byte2
     xtmp = _mm_srli_si128(xpin, 6);
     xtmp = _mm_and_si128(xtmp, xmask2);
-    xp = _mm_add_epi32(xp, xtmp);
+    xstate = _mm_add_epi32(xstate, xtmp);
     //dword3,byte3
     xtmp = _mm_srli_si128(xpin, 3);
     xtmp = _mm_and_si128(xtmp, xmask3);
-    xp = _mm_add_epi32(xp, xtmp);
-    // now xp = xstate+p and we complete with xstate = xstate << 5 + xp
-    xstate = _mm_slli_epi32(xstate, 5);
-    xstate = _mm_add_epi32(xstate, xp);
+    xstate = _mm_add_epi32(xstate, xtmp);
 
 #endif
 
