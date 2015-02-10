@@ -63,7 +63,7 @@ float hx_timedelta_s(const hx_time *start, const hx_time *end) {
   return delta >= 0 ? delta : -delta;
 }
 
-float MiB_per_s(size_t bytes, const hx_time *start, const hx_time *end) {
+float MiB_per_s(float bytes, const hx_time *start, const hx_time *end) {
   float duration_s = hx_timedelta_s(start, end);
   if(duration_s == 0) {
     return -1;
@@ -88,7 +88,9 @@ static int test_##hash_function##_performance(FILE *stream, const void *in, size
     stop = hx_gettime(); \
     timedelta = hx_timedelta_s(&start, &stop); \
   } \
-  fprintf(stream, "\thashed %f MiB/s\n", MiB_per_s(in_sz*repeat_count, &start, &stop)); \
+  fprintf(stream, "\thashed %dx%d MiB = %dMiB / %.2fs = %.2f MiB/s\n", \
+    repeat_count, (int)(in_sz/(1024*1024)), (int)((in_sz/(1024*1024)) * repeat_count), timedelta, \
+    MiB_per_s((float)in_sz*(float)repeat_count, &start, &stop)); \
   return rc; \
 } \
 
