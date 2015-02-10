@@ -16,7 +16,7 @@
 #ifdef __GNUC__
 # define HX4_ALIGNED( declaration , alignment ) declaration __attribute__((aligned( (alignment))))
 #elif _MSC_VER
-# define HX4_ALIGNED( declaration , alignment ) _declspec(align((alignment))) declaration
+# define HX4_ALIGNED( declaration , alignment ) _declspec(align(alignment)) declaration
 #else
 # error HX4_ALIGNED not yet implemented on this compiler
 #endif
