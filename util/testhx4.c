@@ -74,17 +74,17 @@ float MiB_per_s(size_t bytes, const hx_time *start, const hx_time *end) {
 
 #define HX4_PERF_TEST_IMPL(hash_function, output_length_bits) \
 static int test_##hash_function##_performance(FILE *stream, const void *in, size_t in_sz, const void *cookie, size_t cookie_sz) { \
-  int rc = 0; \
+  volatile int rc = 0; \
   hx_time start; \
   hx_time stop; \
   float timedelta = 0; \
   int repeat_count = 0; \
-  unsigned char hash_output[(output_length_bits)/8]; \
+  volatile unsigned char hash_output[(output_length_bits)/8]; \
   \
   start = hx_gettime(); \
-  while (timedelta < 3.0) { \
+  while (timedelta < 10.0) { \
     repeat_count++; \
-    rc += hash_function(in, in_sz, cookie, cookie_sz, hash_output, sizeof(hash_output)); \
+    rc += hash_function(in, in_sz, cookie, cookie_sz, (void*)hash_output, sizeof(hash_output)); \
     stop = hx_gettime(); \
     timedelta = hx_timedelta_s(&start, &stop); \
   } \
@@ -171,6 +171,93 @@ static int test_hx4_x4djbx33a_128_all_correctness(FILE *stream, const void *in, 
   return 0;
 }
 
+static int test_hx4_djbx33a_32_all_correctness(FILE *stream, const void *in, size_t in_sz, const void *cookie, size_t cookie_sz) {
+  int rc = 0;
+  int i;
+  uint8_t hash_output_ref[32/8];
+  uint8_t hash_output_copt[32/8];
+
+  if(in_sz < 1024) {
+    fprintf(stream, "\tinput buffer too small\n");
+    return 1;
+  }
+  in_sz /= 1024;
+  if(in_sz < 1024) {
+    in_sz = 1024;
+  }
+
+  for(i=0; i<32 && i<in_sz; i++) { 
+    rc = hx4_djbx33a_32_ref((uint8_t*)in+i, in_sz-i, cookie, cookie_sz, hash_output_ref, sizeof(hash_output_ref));
+    if(rc != HX4_ERR_SUCCESS) {
+      return rc;
+    }
+    rc = hx4_djbx33a_32_copt((uint8_t*)in+i, in_sz-i, cookie, cookie_sz, hash_output_copt, sizeof(hash_output_copt));
+    if(rc != HX4_ERR_SUCCESS) {
+      return rc;
+    }
+
+    if(memcmp(hash_output_ref, hash_output_copt, sizeof(hash_output_ref)) != 0) {
+      fprintf(stream, "\tcopt output doesn't match ref output at offset %d\n", i);
+      return 1;
+    }
+
+  }
+
+  return 0;
+}
+
+#define HX4_TEST_COOKIE_APPLIED_IMPL(hash_function, output_bits) \
+static int test_##hash_function##_cookie_applied(FILE *stream, const void *in, size_t in_sz, const void *cookie, size_t cookie_sz) { \
+  uint8_t out_i_cookie[(output_bits)/8]; \
+  uint8_t out_z_cookie[(output_bits)/8]; \
+  uint8_t out_1_cookie[(output_bits)/8]; \
+  uint8_t zero_cookie[128/8]; \
+  uint8_t ones_cookie[128/8]; \
+  int rc; \
+  if(in_sz < 1024) { \
+    fprintf(stream, "\tinput buffer too small\n"); \
+    return 1; \
+  } \
+  in_sz = 1024; \
+  memset(zero_cookie, 0, sizeof(zero_cookie)); \
+  memset(ones_cookie, 1, sizeof(ones_cookie)); \
+  memset(out_i_cookie, 0, sizeof(out_i_cookie)); \
+  memset(out_z_cookie, 0, sizeof(out_z_cookie)); \
+  rc = hash_function(in, in_sz, cookie, cookie_sz, out_i_cookie, sizeof(out_i_cookie)); \
+  if(rc != HX4_ERR_SUCCESS) { \
+    return rc; \
+  } \
+  rc = hash_function(in, in_sz, zero_cookie, sizeof(zero_cookie), out_z_cookie, sizeof(out_z_cookie)); \
+  if(rc != HX4_ERR_SUCCESS) { \
+    return rc; \
+  } \
+  rc = hash_function(in, in_sz, ones_cookie, sizeof(ones_cookie), out_1_cookie, sizeof(out_1_cookie)); \
+  if(rc != HX4_ERR_SUCCESS) { \
+    return rc; \
+  } \
+  if(memcmp(out_i_cookie, out_z_cookie, sizeof(out_i_cookie)) == 0) { \
+    fprintf(stream, "\tcookie not applied\n"); \
+    return 2; \
+  } \
+  if(memcmp(out_i_cookie, out_1_cookie, sizeof(out_i_cookie)) == 0) { \
+    fprintf(stream, "\tcookie not applied\n"); \
+    return 3; \
+  } \
+  return 0; \
+}
+
+
+HX4_TEST_COOKIE_APPLIED_IMPL(hx4_djbx33a_32_ref, 32)
+HX4_TEST_COOKIE_APPLIED_IMPL(hx4_djbx33a_32_copt, 32)
+HX4_TEST_COOKIE_APPLIED_IMPL(hx4_x4djbx33a_128_ref, 128)
+HX4_TEST_COOKIE_APPLIED_IMPL(hx4_x4djbx33a_128_copt, 128)
+#if HX4_HAS_SSE2
+HX4_TEST_COOKIE_APPLIED_IMPL(hx4_x4djbx33a_128_sse2, 128)
+#endif
+#if HX4_HAS_SSSE3
+HX4_TEST_COOKIE_APPLIED_IMPL(hx4_x4djbx33a_128_ssse3, 128)
+#endif
+
 
 typedef int (*test_function_t)(FILE*, const void *, size_t, const void *, size_t);
 typedef struct {
@@ -183,10 +270,12 @@ typedef struct {
 static void init_random_buffer(unsigned char *buffer, size_t buffer_size) {
   unsigned char * p = buffer;
   unsigned char * const buffer_end = buffer+buffer_size;
-  //srand(42);
-  for(;p<buffer_end;p++) {
+  srand(42);
+  size_t i;
+
+  for(i=0;p<buffer_end;p++,i++) {
     //*p = rand();
-    *p = (unsigned char)(p-buffer);
+    *p = (unsigned char)(i & 0x00ff);
   }
 }
 
@@ -196,17 +285,33 @@ int main(int argc, char **argv) {
   int temp = 0;
   int i = 0;
   unsigned char *random_buffer = NULL;
-  const int random_buffer_size = 1024*1024*512 + 23;
+  const int random_buffer_size = 1024*1024*128 + 23;
   uint8_t cookie[128/8];
-  
+
+  printf("initializing input buffers\n");
   random_buffer = malloc(random_buffer_size);
   if(!random_buffer) {
     return -1;
   }
   init_random_buffer(random_buffer, random_buffer_size);
   init_random_buffer(cookie, sizeof(cookie));
+  printf("\tallocated and initialized %d MiB for tests\n", random_buffer_size/(1024*1024));
 
   test_t tests[] = {
+    TEST_ITEM(test_hx4_x4djbx33a_128_all_correctness)
+    TEST_ITEM(test_hx4_djbx33a_32_all_correctness)
+   
+    TEST_ITEM(test_hx4_djbx33a_32_ref_cookie_applied)
+    TEST_ITEM(test_hx4_djbx33a_32_copt_cookie_applied)
+    TEST_ITEM(test_hx4_x4djbx33a_128_ref_cookie_applied)
+    TEST_ITEM(test_hx4_x4djbx33a_128_copt_cookie_applied)
+#if HX4_HAS_SSE2
+    TEST_ITEM(test_hx4_x4djbx33a_128_sse2_cookie_applied)
+#endif
+#if HX4_HAS_SSSE3
+    TEST_ITEM(test_hx4_x4djbx33a_128_ssse3_cookie_applied)
+#endif
+ 
     TEST_ITEM(test_hx4_djbx33a_32_ref_performance)
     TEST_ITEM(test_hx4_djbx33a_32_copt_performance)
     TEST_ITEM(test_hx4_x4djbx33a_128_ref_performance)
@@ -217,7 +322,6 @@ int main(int argc, char **argv) {
 #if HX4_HAS_SSSE3
     TEST_ITEM(test_hx4_x4djbx33a_128_ssse3_performance)
 #endif
-    TEST_ITEM(test_hx4_x4djbx33a_128_all_correctness)
     TEST_ITEM(test_hx4_siphash24_64_ref_performance)
   };
 

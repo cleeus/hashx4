@@ -24,7 +24,7 @@ int hx4_check_params(size_t sizeof_state, const void *in, size_t in_sz, const vo
   if(cookie_sz < 128/8) {
     return HX4_ERR_COOKIE_TOO_SMALL;
   }
-  if(buffers_overlapping(in, in_sz, out_sz, out_sz)) {
+  if(buffers_overlapping(in, in_sz, out, out_sz)) {
     return HX4_ERR_OVERLAP;
   }
   if(buffers_overlapping(in, in_sz, cookie, cookie_sz)) {
@@ -40,5 +40,19 @@ int hx4_check_params(size_t sizeof_state, const void *in, size_t in_sz, const vo
 int hx4_bytes_to_aligned(const void *ptr) {
   return ((size_t)ptr) % 16 == 0 ? 0 : 16 - (((size_t)ptr) % 16);
 }
+
+void hx4_xor_cookie_32(void *target, const void *cookie) {
+  int i; 
+  for(i=0; i<4; i++) {
+    ((uint8_t*)target)[i] ^= ((uint8_t*)cookie)[i];
+  }
+}
+void hx4_xor_cookie_128(void *target, const void *cookie) {
+  int i;
+  for(i=0; i<16; i++) {
+    ((uint8_t*)target)[i] ^= ((uint8_t*)cookie)[i];
+  }
+}
+
 
 

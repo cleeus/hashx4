@@ -52,8 +52,8 @@ int hx4_djbx33a_32_ref(const void *buffer, size_t buffer_size, const void *cooki
     p++;
   }
 
+  hx4_xor_cookie_32(&state, cookie);
   memcpy(out_hash, &state, sizeof(state));
-
   return HX4_ERR_SUCCESS;
 }
 
@@ -62,6 +62,7 @@ int hx4_djbx33a_32_copt(const void *buffer, size_t buffer_size, const void *cook
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
   const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer);
   uint32_t state = 5381;
+  uint64_t in;
   int rc;
   int i;
 
@@ -87,7 +88,7 @@ int hx4_djbx33a_32_copt(const void *buffer, size_t buffer_size, const void *cook
 #if 1
 #define HX4_DJBX33A_ROUND(round) \
     /* state = state * 33 + p[round]; */ \
-    state = (state << 5) + state + p[round]; \
+    state = (state << 5) + state + p[round];
 
     HX4_DJBX33A_ROUND(0)
     HX4_DJBX33A_ROUND(1)
@@ -126,8 +127,8 @@ int hx4_djbx33a_32_copt(const void *buffer, size_t buffer_size, const void *cook
   }
 
  
+  hx4_xor_cookie_32(&state, cookie);
   memcpy(out_hash, &state, sizeof(state));
-
   return HX4_ERR_SUCCESS;
 }
 
@@ -151,6 +152,7 @@ int hx4_x4djbx33a_128_ref(const void *buffer, size_t buffer_size, const void *co
     state_i = (state_i+1) % 4;
   }
 
+  hx4_xor_cookie_128(state, cookie);
   memcpy(out_hash, state, sizeof(state));
 
   return HX4_ERR_SUCCESS;
@@ -178,7 +180,7 @@ int hx4_x4djbx33a_128_copt(const void *buffer, size_t buffer_size, const void *c
     //state[state_i] = state[state_i] * 33  + *p;
     state[state_i] = (state[state_i] << 5) + state[state_i]  + *p;
     p++;
-    state_i = (state_i+1) % 4;
+    state_i = (state_i+1) & 0x03;
   }
 
   HX4_ASSUME_ALIGNED(p, 16)
@@ -236,9 +238,10 @@ int hx4_x4djbx33a_128_copt(const void *buffer, size_t buffer_size, const void *c
     //state[state_i] = state[state_i] * 33  + *p;
     state[state_i] = (state[state_i] << 5) + state[state_i]  + *p;
     p++;
-    state_i = (state_i+1) % 4;
+    state_i = (state_i+1) & 0x03;
   }
 
+  hx4_xor_cookie_128(state, cookie);
   memcpy(out_hash, state, sizeof(state));
 
   return HX4_ERR_SUCCESS;
@@ -261,9 +264,11 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, const void *c
 #if 0
   __m128i xpin;
   __m128i xtmp;
-  int tmp;
+  __m128i xmask0;
+  __m128i xmask1;
+  __m128i xmask2;
+  __m128i xmask3;
 #endif
-
 
   rc = hx4_check_params(sizeof(state), buffer, buffer_size, cookie, cookie_sz, out_hash, out_hash_size);
   if(rc != HX4_ERR_SUCCESS) {
@@ -277,7 +282,7 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, const void *c
     //state[state_i] = state[state_i] * 33  + *p;
     state[state_i] = (state[state_i] << 5) + state[state_i]  + *p;
     p++;
-    state_i = (state_i+1) % 4;
+    state_i = (state_i+1) & 0x03;
   }
 
   HX4_ASSUME_ALIGNED(p, 16)
@@ -295,9 +300,122 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, const void *c
   //transfer state into register
   xstate = _mm_load_si128((__m128i*)state);
 
+#if 0
+  //load masks
+  xmask0 = _mm_set_epi32(0x00ff, 0, 0, 0);
+  xmask1 = _mm_set_epi32(0, 0x00ff, 0, 0);
+  xmask2 = _mm_set_epi32(0, 0, 0x00ff, 0);
+  xmask3 = _mm_set_epi32(0, 0, 0, 0x00ff);
+#endif
+
  //main processing loop
   while(p+15<buffer_end) {
     HX4_ASSUME_ALIGNED(p, 16)
+
+#if 0
+    //zero xp
+    xp = _mm_setzero_si128();
+    //load 16 bytes aligned
+    xpin = _mm_load_si128((__m128i*)p);
+
+    //round 0
+
+    //byte0
+    xtmp = _mm_srli_si128(xpin, 3);
+    xtmp = _mm_and_si128(xtmp, xmask0);
+    xp = _mm_or_si128(xp, xtmp);
+    //byte1
+    xtmp = _mm_srli_si128(xpin, 6);
+    xtmp = _mm_and_si128(xtmp, xmask1);
+    xp = _mm_or_si128(xp, xtmp);
+    //byte2
+    xtmp = _mm_srli_si128(xpin, 9);
+    xtmp = _mm_and_si128(xtmp, xmask2);
+    xp = _mm_or_si128(xp, xtmp);
+    //byte2
+    xtmp = _mm_srli_si128(xpin, 12);
+    xtmp = _mm_and_si128(xtmp, xmask3);
+    xp = _mm_or_si128(xp, xtmp);
+    //s*33+p
+    xp = _mm_add_epi32(xp, xstate); \
+    xstate = _mm_slli_epi32(xstate, 5); \
+    xstate = _mm_add_epi32(xstate, xp);
+
+
+
+    //round 1
+
+    //byte0
+    xtmp = _mm_slli_si128(xpin, 1);
+    xtmp = _mm_and_si128(xtmp, xmask0);
+    xp = _mm_or_si128(xp, xtmp);
+    //byte1
+    xtmp = _mm_srli_si128(xpin, 3);
+    xtmp = _mm_and_si128(xtmp, xmask1);
+    xp = _mm_or_si128(xp, xtmp);
+    //byte2
+    xtmp = _mm_srli_si128(xpin, 6);
+    xtmp = _mm_and_si128(xtmp, xmask2);
+    xp = _mm_or_si128(xp, xtmp);
+    //byte2
+    xtmp = _mm_srli_si128(xpin, 9);
+    xtmp = _mm_and_si128(xtmp, xmask3);
+    xp = _mm_or_si128(xp, xtmp);
+    //s*33+p
+    xp = _mm_add_epi32(xp, xstate); \
+    xstate = _mm_slli_epi32(xstate, 5); \
+    xstate = _mm_add_epi32(xstate, xp);
+
+
+    //round 2
+
+    //byte0
+    xtmp = _mm_slli_si128(xpin, 5);
+    xtmp = _mm_and_si128(xtmp, xmask0);
+    xp = _mm_or_si128(xp, xtmp);
+    //byte1
+    xtmp = _mm_slli_si128(xpin, 1);
+    xtmp = _mm_and_si128(xtmp, xmask1);
+    xp = _mm_or_si128(xp, xtmp);
+    //byte2
+    xtmp = _mm_srli_si128(xpin, 3);
+    xtmp = _mm_and_si128(xtmp, xmask2);
+    xp = _mm_or_si128(xp, xtmp);
+    //byte2
+    xtmp = _mm_srli_si128(xpin, 6);
+    xtmp = _mm_and_si128(xtmp, xmask3);
+    xp = _mm_or_si128(xp, xtmp);
+    //s*33+p
+    xp = _mm_add_epi32(xp, xstate); \
+    xstate = _mm_slli_epi32(xstate, 5); \
+    xstate = _mm_add_epi32(xstate, xp);
+
+
+    //round 3
+
+    //byte0
+    xtmp = _mm_slli_si128(xpin, 9);
+    xtmp = _mm_and_si128(xtmp, xmask0);
+    xp = _mm_or_si128(xp, xtmp);
+    //byte1
+    xtmp = _mm_slli_si128(xpin, 5);
+    xtmp = _mm_and_si128(xtmp, xmask1);
+    xp = _mm_or_si128(xp, xtmp);
+    //byte2
+    xtmp = _mm_slli_si128(xpin, 1);
+    xtmp = _mm_and_si128(xtmp, xmask2);
+    xp = _mm_or_si128(xp, xtmp);
+    //byte2
+    xtmp = _mm_srli_si128(xpin, 3);
+    xtmp = _mm_and_si128(xtmp, xmask3);
+    xp = _mm_or_si128(xp, xtmp);
+    //s*33+p
+    xp = _mm_add_epi32(xp, xstate); \
+    xstate = _mm_slli_epi32(xstate, 5); \
+    xstate = _mm_add_epi32(xstate, xp);
+
+#define HX4_SSE2_DJB2ROUND(round)
+#endif
 
 #if 0
     //load 16 bytes aligned
@@ -339,10 +457,11 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, const void *c
 #endif
 
 
-#if 1
+#if 0
 #define HX4_SSE2_DJB2ROUND(round) \
     /* load 4 bytes, expand into xp */ \
-    xp = _mm_set_epi32(p[round*4+3], p[round*4+2], p[round*4+1], p[round*4+0]); \
+    /* xp = _mm_set_epi32(p[round*4+3], p[round*4+2], p[round*4+1], p[round*4+0]); */ \
+    xp = _mm_setr_epi32(p[round*4+0], p[round*4+1], p[round*4+2], p[round*4+3]); \
     xp = _mm_add_epi32(xp, xstate); \
     xstate = _mm_slli_epi32(xstate, 5); \
     xstate = _mm_add_epi32(xstate, xp);
@@ -374,9 +493,10 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, const void *c
     //state[state_i] = state[state_i] * 33  + *p;
     state[state_i] = (state[state_i] << 5) + state[state_i]  + *p;
     p++;
-    state_i = (state_i+1) % 4;
+    state_i = (state_i+1) & 0x03;
   }
 
+  hx4_xor_cookie_128(state, cookie);
   memcpy(out_hash, state, sizeof(state));
 
   return HX4_ERR_SUCCESS;
@@ -411,7 +531,7 @@ int hx4_x4djbx33a_128_ssse3(const void *buffer, size_t buffer_size, const void *
     //state[state_i] = state[state_i] * 33 + *p;
     state[state_i] = (state[state_i] << 5) + state[state_i] + *p;
     p++;
-    state_i = (state_i + 1) % 4;
+    state_i = (state_i + 1) & 0x03;
   }
 
   HX4_ASSUME_ALIGNED(p, 16)
@@ -439,7 +559,7 @@ int hx4_x4djbx33a_128_ssse3(const void *buffer, size_t buffer_size, const void *
   );
 
   //main processing loop
-  while (p + 15<buffer_end) {
+  while (p+15<buffer_end) {
     HX4_ASSUME_ALIGNED(p, 16)
 
     //load 16 bytes aligned
@@ -479,9 +599,10 @@ int hx4_x4djbx33a_128_ssse3(const void *buffer, size_t buffer_size, const void *
     //state[state_i] = state[state_i] * 33 + *p;
     state[state_i] = (state[state_i] << 5) + state[state_i] + *p;   
     p++;
-    state_i = (state_i + 1) % 4;
+    state_i = (state_i + 1) & 0x03;
   }
-
+  
+  hx4_xor_cookie_128(state, cookie);
   memcpy(out_hash, state, sizeof(state));
 
   return HX4_ERR_SUCCESS;
