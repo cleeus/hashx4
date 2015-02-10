@@ -6,16 +6,18 @@ include_directories(
   "${CMAKE_SOURCE_DIR}/src/"
 )
 
+if(NOT MSVC)
 add_definitions(
   -Wall
   -O2
   #-g
   #-march=atom
-  -march=native
-  #-mssse3
+  #-march=native
+  -mssse3
   #-ftree-vectorize
   #-ftree-vectorizer-verbose=1
 )
+endif()
 
 add_executable(testhx4
   util/testhx4.c
