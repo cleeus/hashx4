@@ -26,6 +26,7 @@ algorithms
 	A naive loop implementation that can serve as
 	a reference to check the correctness of the optimized implementations.
 * *x4djbx33a\_128 copt* - The same x4djbx33a function with some alignment hints for the compiler.
+* *x4djbx33a\_128_mmx* - MMX intrinsics implementations.
 * *x4djbx33a\_128 sse2* - SSE2 intrinsics implementation.
 * *x4djbx33a\_128 ssse3* - SSSE3 intrinsics implementation. SSSE3 has many useful new instructions, among them a mighty \_mm\_shuffle\_epi8
 	which solves a problem in the SSE2 implementation.
@@ -59,14 +60,16 @@ platforms. While experimenting with the SSE2 instruction set, the author recogni
 well suited for the instruction set and algorithm.
 Alot of SSE2 performance gains come from reading input data in
 aligned 128bit chunks (movdqa). If the data to be processed is layed out such that this is possible,
-all else follows naturally.
-In case of the x4djb algorithms, the bytes had to be reordered from sequential to parallel
+all performance follows naturally.
+In case of the x4djb algorithms, the bytes have to be reordered from sequential to parallel
 (0123012301230123 -> 0000111122223333).
-This is similar to a matrix-transpose, but on a single 128bit register across the four 32bit dwords.
-SSE2 has shuffle instructions, but for 16bit words, not for single bytes. This means the shuffle
-needed to be emulated. The author tried many variations of reading and shuffling inputs in SSE2 but it
+This is similar to a matrix-transpose, but on a single 128bit register across the four 32bit dwords
+(or in case of MMX across the two 32bit dwords in a 64bit register).
+SSE2 has shuffle instructions, but for 16bit words, not for single bytes. MMX has no shuffle at all.
+This means the shuffle needs to be emulated.
+The author tried many variations of reading and shuffling inputs in SSE2 but it
 remains the problematic part in the SSE2 implementation. SSSE3 added the \_mm\_shuffle\_epi8 instruction.
-This solved the problem and allowed a consciese and very fast vectorized solution that stands up to the
-expecations.
+This solvs the problem in a single opcode and enables a consciese and very fast
+vectorized solution that stands up to the expecations.
 
 
