@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 int hx4_check_params(size_t sizeof_state, const void *in, size_t in_sz, const void *cookie, size_t cookie_sz, void *out, size_t out_sz);
-int hx4_bytes_to_aligned(const void *ptr);
+int hx4_bytes_to_aligned(const void *ptr, int alignment);
 void hx4_xor_cookie_32(void *target, const void *cookie);
 void hx4_xor_cookie_128(void *target, const void *cookie);
 

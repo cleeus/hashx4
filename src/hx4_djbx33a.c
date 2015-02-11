@@ -64,7 +64,7 @@ int hx4_djbx33a_32_ref(const void *buffer, size_t buffer_size, const void *cooki
 int hx4_djbx33a_32_copt(const void *buffer, size_t buffer_size, const void *cookie, size_t cookie_sz, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
-  const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer);
+  const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer, 16);
   uint32_t state = 5381;
   int rc;
   int i;
@@ -164,7 +164,7 @@ int hx4_x4djbx33a_128_ref(const void *buffer, size_t buffer_size, const void *co
 int hx4_x4djbx33a_128_copt(const void *buffer, size_t buffer_size, const void *cookie, size_t cookie_sz, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
-  const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer);
+  const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer, 16);
   uint32_t state[] = { 5381, 5381, 5381, 5381 };
   uint32_t state_tmp;
   int state_i=0;
@@ -254,8 +254,8 @@ int hx4_x4djbx33a_128_copt(const void *buffer, size_t buffer_size, const void *c
 int hx4_x4djbx33a_128_mmx(const void *buffer, size_t buffer_size, const void *cookie, size_t cookie_sz, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
-  const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer);
-  HX4_ALIGNED(uint32_t state[], 16) = { 5381, 5381, 5381, 5381 };
+  const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer, 8);
+  HX4_ALIGNED(uint32_t state[], 8) = { 5381, 5381, 5381, 5381 };
   uint32_t state_tmp;
   int state_i=0;
   int rc;
@@ -284,7 +284,7 @@ int hx4_x4djbx33a_128_mmx(const void *buffer, size_t buffer_size, const void *co
     state_i = (state_i+1) & 0x03;
   }
 
-  HX4_ASSUME_ALIGNED(p, 16)
+  HX4_ASSUME_ALIGNED(p, 8)
 
   //rotate states to match position on the input stream
   //so that the main loop can be simple
@@ -392,7 +392,7 @@ int hx4_x4djbx33a_128_mmx(const void *buffer, size_t buffer_size, const void *co
 int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, const void *cookie, size_t cookie_sz, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
-  const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer);
+  const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer, 16);
 
   HX4_ALIGNED(uint32_t state[], 16) = { 5381, 5381, 5381, 5381 };
 
@@ -723,7 +723,7 @@ int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, const void *c
 int hx4_x4djbx33a_128_ssse3(const void *buffer, size_t buffer_size, const void *cookie, size_t cookie_sz, void *out_hash, size_t out_hash_size) {
   const uint8_t *p;
   const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
-  const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer);
+  const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer, 16);
   HX4_ALIGNED(uint32_t state[], 16) = { 5381, 5381, 5381, 5381 };
   uint32_t state_tmp;
   __m128i xstate;
