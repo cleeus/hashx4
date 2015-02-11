@@ -262,8 +262,12 @@ int hx4_x4djbx33a_128_mmx(const void *buffer, size_t buffer_size, const void *co
   int i;
   __m64 xstate0;
   __m64 xstate1;
+  __m64 xpin;
+  __m64 xtmp;
   __m64 xp0;
   __m64 xp1;
+  __m64 xmask0;
+  __m64 xmask1;
 
   rc = hx4_check_params(sizeof(state), buffer, buffer_size, cookie, cookie_sz, out_hash, out_hash_size);
   if(rc != HX4_ERR_SUCCESS) {
@@ -293,38 +297,72 @@ int hx4_x4djbx33a_128_mmx(const void *buffer, size_t buffer_size, const void *co
   }
 
   //load state into registers
-  xstate0 = _mm_cvtsi64_m64(((uint64_t*)state)[0]);
-  xstate1 = _mm_cvtsi64_m64(((uint64_t*)state)[1]);
+  xstate0 = ((__m64*)state)[0];
+  xstate1 = ((__m64*)state)[1];
+  //load AND masks
+  xmask0 = _mm_set_pi32(0, 0x00ff);
+  xmask1 = _mm_set_pi32(0x00ff, 0);
 
   //main processing loop
-  while(p+15<buffer_end) {
-    HX4_ASSUME_ALIGNED(p, 16)
-    
-#define HX4_MMX_X4DJBX33A_ROUND(round) \
-    /*load 4 bytes into xp0 and xp1 */ \
-    xp0 = _mm_set_pi32(p[round*4+0], p[round*4+1]); \
-    xp1 = _mm_set_pi32(p[round*4+2], p[round*4+3]); \
-    /*state = state << 5 + state + p */ \
-    xp0 = _mm_add_pi32(xstate0, xp0); \
-    xp1 = _mm_add_pi32(xstate1, xp1); \
-    xstate0 = _mm_slli_pi32(xstate0, 5); \
-    xstate1 = _mm_slli_pi32(xstate1, 5); \
-    xstate0 = _mm_add_pi32(xstate0, xp0); \
-    xstate1 = _mm_add_pi32(xstate1, xp1); \
+  while(p+8<buffer_end) {
+    HX4_ASSUME_ALIGNED(p, 8)
 
-    HX4_MMX_X4DJBX33A_ROUND(0)
-    HX4_MMX_X4DJBX33A_ROUND(0)
-    HX4_MMX_X4DJBX33A_ROUND(0)
-    HX4_MMX_X4DJBX33A_ROUND(0)
+    /*load 8 bytes into xpin */
+    xpin = *((__m64*)(p));
 
-#undef HX4_MMX_X4DJBX33A_ROUND
+    //dword0,byte0
+    //no shift needed for this one
+    xp0 = _mm_and_si64(xpin, xmask0);
+    //dword0,byte1
+    xtmp = _mm_slli_si64(xpin, 3*8);
+    xtmp = _mm_and_si64(xtmp, xmask1);
+    xp0 = _mm_or_si64(xp0, xtmp);
+    //dword0,byte2
+    xp1 = _mm_srli_si64(xpin, 2*8);
+    xp1 = _mm_and_si64(xp1, xmask0);
+    //dword0,byte3
+    xtmp = _mm_slli_si64(xpin, 1*8);
+    xtmp = _mm_and_si64(xtmp, xmask1);
+    xp1 = _mm_or_si64(xp1, xtmp);
+    //xstate = xstate * 33 + xp
+    xp0 = _mm_add_pi32(xstate0, xp0);
+    xp1 = _mm_add_pi32(xstate1, xp1);
+    xstate0 = _mm_slli_pi32(xstate0, 5);
+    xstate1 = _mm_slli_pi32(xstate1, 5);
+    xstate0 = _mm_add_pi32(xstate0, xp0);
+    xstate1 = _mm_add_pi32(xstate1, xp1);
 
-    p+=16;
+    //dword1,byte0
+    xp0 = _mm_srli_si64(xpin, 4*8);
+    xp0 = _mm_and_si64(xp0, xmask0);
+    //dword1,byte1
+    xtmp = _mm_srli_si64(xpin, 1*8);
+    xtmp = _mm_and_si64(xtmp, xmask1);
+    xp0 = _mm_or_si64(xp0, xtmp);
+    //dword1,byte2
+    xp1 = _mm_srli_si64(xpin, 6*8);
+    xp1 = _mm_and_si64(xp1, xmask0);
+    //dword1,byte3
+    xtmp = _mm_srli_si64(xpin, 3*8);
+    xtmp = _mm_and_si64(xtmp, xmask1);
+    xp1 = _mm_or_si64(xp1, xtmp);
+    //xstate = xstate * 33 + xp
+    xp0 = _mm_add_pi32(xstate0, xp0);
+    xp1 = _mm_add_pi32(xstate1, xp1);
+    xstate0 = _mm_slli_pi32(xstate0, 5);
+    xstate1 = _mm_slli_pi32(xstate1, 5);
+    xstate0 = _mm_add_pi32(xstate0, xp0);
+    xstate1 = _mm_add_pi32(xstate1, xp1);
+
+    p+=8;
   }
 
   //store registers back into state
-  ((uint64_t*)state)[0] = _mm_cvtm64_si64(xstate0);
-  ((uint64_t*)state)[1] = _mm_cvtm64_si64(xstate1);
+  ((__m64*)state)[0] = xstate0;
+  ((__m64*)state)[1] = xstate1;
+
+  //reset MMX
+  _mm_empty();
 
   //rotate back the states
   for(i=0; i<state_i; i++) {

@@ -99,7 +99,7 @@ HX4_PERF_TEST_IMPL(hx4_djbx33a_32_ref, 32)
 HX4_PERF_TEST_IMPL(hx4_djbx33a_32_copt, 32)
 HX4_PERF_TEST_IMPL(hx4_x4djbx33a_128_ref, 128)
 HX4_PERF_TEST_IMPL(hx4_x4djbx33a_128_copt, 128)
-#if HX4_HAS_SSE2
+#if HX4_HAS_MMX
 HX4_PERF_TEST_IMPL(hx4_x4djbx33a_128_mmx, 128)
 #endif
 #if HX4_HAS_SSE2
