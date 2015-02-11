@@ -39,8 +39,8 @@ hashrates in MiB/s
 | cpu/abi | compiler+options | djb x33a 32 ref | djb x33a 32 copt | djb x33a 128 ref | x4djb x33a 128 copt | x4djb x33a 128 mmx | x4djb x33a 128 sse2 | x4djb x33a 128 ssse3 |
 |---------------------------------|-------------------------------|------|------|------|------|------|------|------|
 | Atom N450 2x1.6GHz / amd64      | gcc-4.8 -O3 -march=native     |  374 |  623 |  128 |  590 |  478 |  452 |  954 |
-| Atom N450 2x1.6GHz / amd64      | gcc-4.8 -O2 -march=native     |  374 |  627 |  128 |  606 |  478 |  452 | 1024 |
-| Atom N450 2x1.6GHz / amd64      | gcc-4.8 -O2 -mssse3           |  303 |  585 |  139 |  508 |  428 |  414 |  915 |
+| "                               | gcc-4.8 -O2 -march=native     |  374 |  627 |  128 |  606 |  478 |  452 | 1024 |
+| "                               | gcc-4.8 -O2 -mssse3           |  303 |  585 |  139 |  508 |  428 |  414 |  915 |
 | Core i7 4960HQ 4x2.6GHz / x64   | msvc 18.0 /O2 /Ob2 /arch:sse2 |  884 | 3315 | 1014 | 3340 |  | 2581 | 6272 |
 | Core i7 4960HQ 4x2.6GHz / x86   | msvc 18.0 /O2 /Ob2 /arch:sse2 | 1168 | 3054 | 1168 | 1638 |  | 2586 | 6297 |
 | Core i7 4960HQ 4x2.6GHz / amd64 | gcc-4.8 -O3 -march=native     | 1186 | 1581 |  963 | 2958 |  | 2723 | 6829 |
