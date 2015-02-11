@@ -78,7 +78,7 @@ int hx4_djbx33a_32_copt(const void *buffer, size_t buffer_size, const void *cook
 
   //hash input until p is aligned to alignment_target
   for(i=0; p<buffer_end && i<num_bytes_to_seek; i++) {
-    state  = state  * 33  + *p;
+    state  = (state << 5) + state  + *p;
     p++;
   }
 
@@ -125,7 +125,7 @@ int hx4_djbx33a_32_copt(const void *buffer, size_t buffer_size, const void *cook
   //hash remainder
   while(p<buffer_end) {
     //state = state * 33  + *p;
-    state = (state << 5) + state + p[i];
+    state = (state << 5) + state + *p;
     p++;
   }
 
