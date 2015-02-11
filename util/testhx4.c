@@ -72,25 +72,62 @@ float MiB_per_s(float bytes, const hx_time *start, const hx_time *end) {
   }
 }
 
+static void print_performance_stats(FILE *stream, float timedelta, size_t in_sz, uint64_t repeat_count, const hx_time *start, const hx_time *stop) {
+  if (in_sz < 10 * 1024 * 1024) {
+    fprintf(stream, "\thashed %dx%d KiB = %dMiB / %.2fs = %.2f MiB/s\n",
+      (int)repeat_count,
+      (int)(in_sz / 1024),
+      (int)((((double)in_sz * (double)repeat_count) / (1024.0*1024.0))),
+      (double)timedelta,
+      (double)MiB_per_s((float)((double)in_sz*(double)repeat_count), start, stop)
+      );
+  }
+  else {
+    fprintf(stream, "\thashed %dx%d MiB = %dMiB / %.2fs = %.2f MiB/s\n",
+      (int)repeat_count,
+      (int)(in_sz / (1024 * 1024)),
+      (int)((((double)in_sz * (double)repeat_count ) / (1024.0 * 1024.0))),
+      (double)timedelta,
+      (double)MiB_per_s((float)((double)in_sz*(double)repeat_count), start, stop)
+      );
+  }
+}
+
 #define HX4_PERF_TEST_IMPL(hash_function, output_length_bits) \
 static int test_##hash_function##_performance(FILE *stream, const void *in, size_t in_sz, const void *cookie, size_t cookie_sz) { \
   volatile int rc = 0; \
   hx_time start; \
   hx_time stop; \
   float timedelta = 0; \
-  int repeat_count = 0; \
+  uint64_t repeat_count = 0; \
+  uint64_t i=0; \
+  uint64_t micro_repeats = 1 + (1024*1024*100 / in_sz); \
   volatile unsigned char hash_output[(output_length_bits)/8]; \
+  size_t limited_in_sz = in_sz < 1024*4 ? in_sz : 1024*4; \
   \
   start = hx_gettime(); \
   while (timedelta < 10.0) { \
-    repeat_count++; \
-    rc += hash_function(in, in_sz, cookie, cookie_sz, (void*)hash_output, sizeof(hash_output)); \
+    repeat_count+=micro_repeats; \
+    for(i=0;i<micro_repeats;i++) { \
+      rc += hash_function(in, in_sz, cookie, cookie_sz, (void*)hash_output, sizeof(hash_output)); \
+    } \
     stop = hx_gettime(); \
     timedelta = hx_timedelta_s(&start, &stop); \
   } \
-  fprintf(stream, "\thashed %dx%d MiB = %dMiB / %.2fs = %.2f MiB/s\n", \
-    repeat_count, (int)(in_sz/(1024*1024)), (int)((in_sz/(1024*1024)) * repeat_count), timedelta, \
-    MiB_per_s((float)in_sz*(float)repeat_count, &start, &stop)); \
+  print_performance_stats(stream, timedelta, in_sz, repeat_count, &start, &stop); \
+  timedelta = 0; \
+  repeat_count = 0; \
+  start = hx_gettime(); \
+  micro_repeats = 1 + (1024*1024*100 / limited_in_sz); \
+  while (timedelta < 10.0) { \
+    repeat_count+=micro_repeats; \
+    for(i=0;i<micro_repeats;i++) { \
+      rc += hash_function(in, limited_in_sz, cookie, cookie_sz, (void*)hash_output, sizeof(hash_output)); \
+    } \
+    stop = hx_gettime(); \
+    timedelta = hx_timedelta_s(&start, &stop); \
+  } \
+  print_performance_stats(stream, timedelta, limited_in_sz, repeat_count, &start, &stop); \
   return rc; \
 } \
 
@@ -135,7 +172,7 @@ static int test_hx4_x4djbx33a_128_all_correctness(FILE *stream, const void *in, 
     in_sz = 1024;
   }
 
-  for(i=0; i<32 && i<in_sz; i++) { 
+  for(i=0; i<32 && (size_t)i<in_sz; i++) { 
     rc = hx4_x4djbx33a_128_ref((uint8_t*)in+i, in_sz-i, cookie, cookie_sz, hash_output_ref, sizeof(hash_output_ref));
     if(rc != HX4_ERR_SUCCESS) {
       return rc;
@@ -206,7 +243,7 @@ static int test_hx4_djbx33a_32_all_correctness(FILE *stream, const void *in, siz
     in_sz = 1024;
   }
 
-  for(i=0; i<32 && i<in_sz; i++) { 
+  for(i=0; i<32 && (size_t)i<in_sz; i++) { 
     rc = hx4_djbx33a_32_ref((uint8_t*)in+i, in_sz-i, cookie, cookie_sz, hash_output_ref, sizeof(hash_output_ref));
     if(rc != HX4_ERR_SUCCESS) {
       return rc;
@@ -318,7 +355,12 @@ int main(int argc, char **argv) {
   }
   init_random_buffer(random_buffer, random_buffer_size);
   init_random_buffer(cookie, sizeof(cookie));
-  printf("\tallocated and initialized %d MiB for tests\n", random_buffer_size/(1024*1024));
+  if (random_buffer_size < 10 * 1024 * 1024) {
+    printf("\tallocated and initialized %d KiB for tests\n", random_buffer_size / 1024);
+  }
+  else {
+    printf("\tallocated and initialized %d MiB for tests\n", random_buffer_size / (1024 * 1024));
+  }
 
   test_t tests[] = {
     TEST_ITEM(test_hx4_x4djbx33a_128_all_correctness)
