@@ -36,7 +36,7 @@ benchmarks
 
 hashrates in MiB/s
 
-| cpu | abi | compiler+options | djb x33a 32 ref | djb x33a 32 copt | djb x33a 128 ref | x4djb x33a 128 copt | x4djb x33a 128 mmx | x4djb x33a 128 sse2 | x4djb x33a 128 ssse3 |
+| cpu | abi | compiler | djb x33a 32 ref | djb x33a 32 copt | djb x33a 128 ref | x4djb x33a 128 copt | x4djb x33a 128 mmx | x4djb x33a 128 sse2 | x4djb x33a 128 ssse3 |
 |-------------------------|-------|-------------------------------|------|------|------|------|------|------|------|
 | Atom N450 2x1.6GHz      | amd64 | gcc-4.8 -O3 -march=native     |  374 |  623 |  128 |  590 |  478 |  452 |  954 |
 | "                       | amd64 | gcc-4.8 -O2 -march=native     |  374 |  627 |  128 |  606 |  478 |  452 | 1024 |
