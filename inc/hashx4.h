@@ -37,6 +37,10 @@ int hx4_djbx33a_32_copt    (const void *in, size_t in_sz, const void *cookie, si
 int hx4_x4djbx33a_128_ref  (const void *in, size_t in_sz, const void *cookie, size_t cookie_sz, void *out, size_t out_sz);
 int hx4_x4djbx33a_128_copt (const void *in, size_t in_sz, const void *cookie, size_t cookie_sz, void *out, size_t out_sz);
 
+#if HX4_HAS_MMX
+int hx4_x4djbx33a_128_mmx  (const void *in, size_t in_sz, const void *cookie, size_t cookie_sz, void *out, size_t out_sz);
+#endif
+
 #if HX4_HAS_SSE2
 int hx4_x4djbx33a_128_sse2 (const void *in, size_t in_sz, const void *cookie, size_t cookie_sz, void *out, size_t out_sz);
 #endif

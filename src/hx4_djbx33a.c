@@ -23,6 +23,10 @@
 
 #include "hashx4_config.h"
 
+#if HX4_HAS_MMX
+# include <mmintrin.h>
+#endif
+
 #if HX4_HAS_SSE2
 # include <emmintrin.h>
 #endif
@@ -245,6 +249,106 @@ int hx4_x4djbx33a_128_copt(const void *buffer, size_t buffer_size, const void *c
 
   return HX4_ERR_SUCCESS;
 }
+
+#if HX4_HAS_MMX
+int hx4_x4djbx33a_128_mmx(const void *buffer, size_t buffer_size, const void *cookie, size_t cookie_sz, void *out_hash, size_t out_hash_size) {
+  const uint8_t *p;
+  const uint8_t * const buffer_end = (uint8_t*)buffer + buffer_size;
+  const int num_bytes_to_seek = hx4_bytes_to_aligned(buffer);
+  HX4_ALIGNED(uint32_t state[], 16) = { 5381, 5381, 5381, 5381 };
+  uint32_t state_tmp;
+  int state_i=0;
+  int rc;
+  int i;
+  __m64 xstate0;
+  __m64 xstate1;
+  __m64 xp0;
+  __m64 xp1;
+
+  rc = hx4_check_params(sizeof(state), buffer, buffer_size, cookie, cookie_sz, out_hash, out_hash_size);
+  if(rc != HX4_ERR_SUCCESS) {
+    return rc;
+  }
+
+  p = buffer;
+
+  //hash input until p is aligned to alignment_target
+  for(i=0; p<buffer_end && i<num_bytes_to_seek; i++) {
+    //state[state_i] = state[state_i] * 33  + *p;
+    state[state_i] = (state[state_i] << 5) + state[state_i]  + *p;
+    p++;
+    state_i = (state_i+1) & 0x03;
+  }
+
+  HX4_ASSUME_ALIGNED(p, 16)
+
+  //rotate states to match position on the input stream
+  //so that the main loop can be simple
+  for(i=0; i<state_i; i++) {
+    state_tmp = state[0];
+    state[0] = state[1];
+    state[1] = state[2];
+    state[2] = state[3];
+    state[3] = state_tmp;
+  }
+
+  //load state into registers
+  xstate0 = _mm_cvtsi64_m64(((uint64_t*)state)[0]);
+  xstate1 = _mm_cvtsi64_m64(((uint64_t*)state)[1]);
+
+  //main processing loop
+  while(p+15<buffer_end) {
+    HX4_ASSUME_ALIGNED(p, 16)
+    
+#define HX4_MMX_X4DJBX33A_ROUND(round) \
+    /*load 4 bytes into xp0 and xp1 */ \
+    xp0 = _mm_set_pi32(p[round*4+0], p[round*4+1]); \
+    xp1 = _mm_set_pi32(p[round*4+2], p[round*4+3]); \
+    /*state = state << 5 + state + p */ \
+    xp0 = _mm_add_pi32(xstate0, xp0); \
+    xp1 = _mm_add_pi32(xstate1, xp1); \
+    xstate0 = _mm_slli_pi32(xstate0, 5); \
+    xstate1 = _mm_slli_pi32(xstate1, 5); \
+    xstate0 = _mm_add_pi32(xstate0, xp0); \
+    xstate1 = _mm_add_pi32(xstate1, xp1); \
+
+    HX4_MMX_X4DJBX33A_ROUND(0)
+    HX4_MMX_X4DJBX33A_ROUND(0)
+    HX4_MMX_X4DJBX33A_ROUND(0)
+    HX4_MMX_X4DJBX33A_ROUND(0)
+
+#undef HX4_MMX_X4DJBX33A_ROUND
+
+    p+=16;
+  }
+
+  //store registers back into state
+  ((uint64_t*)state)[0] = _mm_cvtm64_si64(xstate0);
+  ((uint64_t*)state)[1] = _mm_cvtm64_si64(xstate1);
+
+  //rotate back the states
+  for(i=0; i<state_i; i++) {
+    state_tmp = state[3];
+    state[3] = state[2];
+    state[2] = state[1];
+    state[1] = state[0];
+    state[0] = state_tmp;
+  }
+
+  //process remainder
+  while(p<buffer_end) {
+    //state[state_i] = state[state_i] * 33  + *p;
+    state[state_i] = (state[state_i] << 5) + state[state_i]  + *p;
+    p++;
+    state_i = (state_i+1) & 0x03;
+  }
+
+  hx4_xor_cookie_128(state, cookie);
+  memcpy(out_hash, state, sizeof(state));
+
+  return HX4_ERR_SUCCESS;
+}
+#endif //HX4_HAS_MMX
 
 #if HX4_HAS_SSE2
 int hx4_x4djbx33a_128_sse2(const void *buffer, size_t buffer_size, const void *cookie, size_t cookie_sz, void *out_hash, size_t out_hash_size) {

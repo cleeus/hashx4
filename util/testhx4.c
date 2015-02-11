@@ -100,6 +100,9 @@ HX4_PERF_TEST_IMPL(hx4_djbx33a_32_copt, 32)
 HX4_PERF_TEST_IMPL(hx4_x4djbx33a_128_ref, 128)
 HX4_PERF_TEST_IMPL(hx4_x4djbx33a_128_copt, 128)
 #if HX4_HAS_SSE2
+HX4_PERF_TEST_IMPL(hx4_x4djbx33a_128_mmx, 128)
+#endif
+#if HX4_HAS_SSE2
 HX4_PERF_TEST_IMPL(hx4_x4djbx33a_128_sse2, 128)
 #endif
 #if HX4_HAS_SSSE3
@@ -112,6 +115,9 @@ static int test_hx4_x4djbx33a_128_all_correctness(FILE *stream, const void *in, 
   int i;
   uint8_t hash_output_ref[128/8];
   uint8_t hash_output_copt[128/8];
+#if HX4_HAS_MMX
+  uint8_t hash_output_mmx[128/8];
+#endif
 #if HX4_HAS_SSE2
   uint8_t hash_output_sse2[128/8];
 #endif
@@ -138,6 +144,12 @@ static int test_hx4_x4djbx33a_128_all_correctness(FILE *stream, const void *in, 
     if(rc != HX4_ERR_SUCCESS) {
       return rc;
     }
+#if HX4_HAS_MMX
+    rc = hx4_x4djbx33a_128_mmx((uint8_t*)in+i, in_sz-i, cookie, cookie_sz, hash_output_mmx, sizeof(hash_output_mmx));
+    if(rc != HX4_ERR_SUCCESS) {
+      return rc;
+    }
+#endif
 #if HX4_HAS_SSE2
     rc = hx4_x4djbx33a_128_sse2((uint8_t*)in+i, in_sz-i, cookie, cookie_sz, hash_output_sse2, sizeof(hash_output_sse2));
     if(rc != HX4_ERR_SUCCESS) {
@@ -155,6 +167,12 @@ static int test_hx4_x4djbx33a_128_all_correctness(FILE *stream, const void *in, 
       fprintf(stream, "\tcopt output doesn't match ref output at offset %d\n", i);
       return 1;
     }
+#if HX4_HAS_MMX
+    if(memcmp(hash_output_ref, hash_output_mmx, sizeof(hash_output_ref)) != 0) {
+      fprintf(stream, "\tmmx output doesn't match ref output at offset %d\n", i);
+      return 1;
+    }
+#endif
 #if HX4_HAS_SSE2
     if(memcmp(hash_output_ref, hash_output_sse2, sizeof(hash_output_ref)) != 0) {
       fprintf(stream, "\tsse2 output doesn't match ref output at offset %d\n", i);
@@ -253,6 +271,9 @@ HX4_TEST_COOKIE_APPLIED_IMPL(hx4_djbx33a_32_ref, 32)
 HX4_TEST_COOKIE_APPLIED_IMPL(hx4_djbx33a_32_copt, 32)
 HX4_TEST_COOKIE_APPLIED_IMPL(hx4_x4djbx33a_128_ref, 128)
 HX4_TEST_COOKIE_APPLIED_IMPL(hx4_x4djbx33a_128_copt, 128)
+#if HX4_HAS_MMX
+HX4_TEST_COOKIE_APPLIED_IMPL(hx4_x4djbx33a_128_mmx, 128)
+#endif
 #if HX4_HAS_SSE2
 HX4_TEST_COOKIE_APPLIED_IMPL(hx4_x4djbx33a_128_sse2, 128)
 #endif
@@ -307,6 +328,9 @@ int main(int argc, char **argv) {
     TEST_ITEM(test_hx4_djbx33a_32_copt_cookie_applied)
     TEST_ITEM(test_hx4_x4djbx33a_128_ref_cookie_applied)
     TEST_ITEM(test_hx4_x4djbx33a_128_copt_cookie_applied)
+#if HX4_HAS_MMX
+    TEST_ITEM(test_hx4_x4djbx33a_128_mmx_cookie_applied)
+#endif
 #if HX4_HAS_SSE2
     TEST_ITEM(test_hx4_x4djbx33a_128_sse2_cookie_applied)
 #endif
@@ -318,6 +342,9 @@ int main(int argc, char **argv) {
     TEST_ITEM(test_hx4_djbx33a_32_copt_performance)
     TEST_ITEM(test_hx4_x4djbx33a_128_ref_performance)
     TEST_ITEM(test_hx4_x4djbx33a_128_copt_performance)
+#if HX4_HAS_MMX
+    TEST_ITEM(test_hx4_x4djbx33a_128_mmx_performance)
+#endif
 #if HX4_HAS_SSE2
     TEST_ITEM(test_hx4_x4djbx33a_128_sse2_performance)
 #endif
