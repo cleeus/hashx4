@@ -70,7 +70,8 @@ lessons learned
 ---------------
 * If it's not an emberrassingly parallel algorithm, make it one (and then vectorize).
 
-The X4DJBX33A algorithm seems to be well suited for running
+The DJBX33A algorithm can be implemented very fast but it is hard to vectorize.
+The modiefied version which I call X4DJBX33A seems to be well suited for running
 on 128bit or 64bit wide vector registers.
 When it is not vectorized, it is slower than a well implemented vanilla DJBX33A algorithm.
 
@@ -86,14 +87,43 @@ Benchmarks with -O0 and -O1 builds have shown that even the MMX and SSE implemen
 get noticeably slower when not optimized. A look at the disassembled binaries of the
 -O2 and -O3 optimized builds shows that the compiler reorders instructions.
 It probably does this to enhance the instruction level parallelism and provide the CPU
-with useful intstructions while it is still waiting for some RAM I/O to complete.
+with useful instructions while it is still waiting for some RAM I/O to complete.
 Using intrinsics instead of raw assembler code allows the developer to leverage the
 wisdom of the compiler.
 
 * The C implementation performance varies widely with the compiler.
 
 MSVC and GCC seem to produce very different code from the C implementations.
-This is not surprising as the research on auto-vectorization and compiler technology
-is still ongoing. The SSE2 version seems to be much more stable accross compilers and platforms.
+This is not surprising as the research on auto-vectorization and codegen
+is still ongoing.
+The SSE2 version seems to be much more stable across compilers and platforms.
+
+
+* Know your instruction set.
+
+The author struggled quite a bit with the SSE2 instruction set and initially
+failed to produce a vectorized version that was faster than the scalar one.
+This was due to unsufficien knowledge of the instruction set. In the end
+learning all the intrinsics and their performance characteristics is what
+enables a developer to find a good solution.
+
+* Alignment matters.
+
+Besides the reference C implementations, the author initially produced optimized
+(but still C-based) versions of DJBX33A and X4DJBX33A.
+A major optimization was to hash the input with a simple implementation until an
+alignment boundary of 16 bytes in the input memory block was reached.
+Then the compiler gets a hint to assume that the pointer is aligned to a 16 byte boundary.
+After the hint, an inner loop which hashes 16 byte chunks and an outer loop which iterates
+the inner loop is run. This keeps the alignment assumption.
+This assumption allows the compiler to use opcodes that rely on alignment and possibly
+enables auto-vectorization.
+
+* SSE2 is everywhere.
+
+If you are on a 64bit X86 processor, you are guaranteed to have SSE2.
+On 32bit X86, every processor sold in the last 10 years has SSE2.
+From an economic point of view you can probably ignore non-SSE2 x86 CPUs or
+just provide one C implementation.
 
 
