@@ -77,9 +77,10 @@ When it is not vectorized, it is slower than a well implemented vanilla DJBX33A 
 
 * The SSSE3 version is an experiment.
 
-The SSE2 version seems to be optimal and on fast machines it is only limited by the RAM bandwidth.
-The SSSE3 version does not hit that limit on slower Intel Atom platforms and maxes out
-on the CPU.
+SSSE3 has number of new integer intrinsics. Among them a mighty \_mm\_shuffle\_epi8
+that can be used to reorder all 16 bytes in a 128bit xmm register into an arbitrary permutation.
+Using this opcode can lead to an alternative implementation that doesn't use the two \_mm\_unpack
+instructions. On some CPUs this seems to be faster, on most slower CPUs it is not.
 
 * Opcode scheduling is important, so use intrinsics.
 
@@ -97,7 +98,6 @@ MSVC and GCC seem to produce very different code from the C implementations.
 This is not surprising as the research on auto-vectorization and codegen
 is still ongoing.
 The SSE2 version seems to be much more stable across compilers and platforms.
-
 
 * Know your instruction set.
 
