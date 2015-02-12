@@ -103,7 +103,7 @@ The SSE2 version seems to be much more stable across compilers and platforms.
 
 The author struggled quite a bit with the SSE2 instruction set and initially
 failed to produce a vectorized version that was faster than the scalar one.
-This was due to unsufficien knowledge of the instruction set. In the end
+This was due to insufficient knowledge of the instruction set. In the end
 learning all the intrinsics and their performance characteristics is what
 enables a developer to find a good solution.
 
