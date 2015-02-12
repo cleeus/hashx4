@@ -29,50 +29,71 @@ algorithms
 * *x4djbx33a\_128_mmx* - MMX intrinsics implementations.
 * *x4djbx33a\_128 sse2* - SSE2 intrinsics implementation.
 * *x4djbx33a\_128 ssse3* - SSSE3 intrinsics implementation. SSSE3 has many useful new instructions, among them a mighty \_mm\_shuffle\_epi8
-	which solves a problem in the SSE2 implementation.
+	which is used to avoid unpacking and uses fewer registers (but seems to be a bit slower).
 
 benchmarks
 ----------
 
-hashrates in MiB/s
+The micro benchmark used here repeatedly hashes 4k of data until 10s are elapsed.
+It then calculates the hashrate in MiB/s.
+Gcc version used is 4.8.2 or 4.8.3.
+Msvc version is 18.0 (Visual Studio 2013).
 
 | cpu | abi | compiler | djb x33a 32 ref | djb x33a 32 copt | djb x33a 128 ref | x4djb x33a 128 copt | x4djb x33a 128 mmx | x4djb x33a 128 sse2 | x4djb x33a 128 ssse3 |
-|-----------------------|-------|-------------------------------|------|------|------|------|------|------|------|
-| Atom N450 1.6GHz      | amd64 | gcc-4.8 -O3 -march= native    |  374 |  623 |  128 |  590 |  478 |  452 |  954 |
-| "                     | amd64 | gcc-4.8 -O2 -march= native    |  374 |  627 |  128 |  606 |  478 |  452 | 1024 |
-| "                     | amd64 | gcc-4.8 -O2 -mssse3           |  303 |  585 |  139 |  508 |  428 |  414 |  915 |
-| "                     | x86   | gcc-4.8 -O3 -march= native    |  378 |  564 |  155 |  532 |  501 |  456 |  928 |
-| "                     | x86   | gcc-4.8 -O2 -march= native    |  379 |  565 |  154 |  532 |  501 |  456 |  929 |
-| "                     | x86   | gcc-4.8 -O2 -mssse3           |  306 |  513 |  119 |  458 |  447 |  425 |  892 |
-| Core i7 4960HQ 2.6GHz | x64   | msvc 18.0 /O2 /Ob2 /arch:sse2 |  884 | 3315 | 1014 | 3340 |      | 2581 | 6272 |
-| "                     | x86   | msvc 18.0 /O2 /Ob2 /arch:sse2 | 1168 | 3054 | 1168 | 1638 |      | 2586 | 6297 |
-| "                     | amd64 | gcc-4.8 -O3 -march= native    | 1186 | 1581 |  963 | 2958 |      | 2723 | 6829 |
-| "                     | amd64 | gcc-4.8 -O2 -march= native    | 1190 | 1609 | 1046 | 2782 |      | 2714 | 6869 |
-| "                     | amd64 | gcc-4.8 -O2 -mssse3           | 1194 | 1618 | 1047 | 2950 |      | 2643 | 7044 |
-| Core i7 3632QM 2.2GHz | amd64 | gcc-4.8 -O3 -march= native    | 1008 | 1312 |  754 | 2365 |      | 2371 | 5053 |
-| "                     | amd64 | gcc-4.8 -O2 -march= native    | 1007 | 1312 |  753 | 2438 |      | 2371 | 5058 |
-| "                     | amd64 | gcc-4.8 -O2 -mssse3           | 1007 | 1312 |  754 | 2445 |      | 2251 | 5188 |
+|-----------------------|-------|---------------------------|-----:|-----:|-----:|-----:|-----:|-----:|-----:|
+| Core i7 4960HQ 2.6GHz | x64   | msvc /O2 /Ob2 /arch:sse2  |  898 | 3520 | 1013 | 3510 |    - | 6820 | 6680 |
+| "                     | x86   | msvc /O2 /Ob2 /arch:sse2  | 1121 | 2970 | 1184 | 1654 | 2200 | 6770 | 6610 |
+| "                     | amd64 | gcc -O3 -march= native    | 1192 | 1620 | 1058 | 2984 | 3534 | 6802 | 6683 |
+| "                     | amd64 | gcc -O2 -march= native    | 1200 | 1616 | 1018 | 3116 | 3492 | 6707 | 6598 |
+| "                     | amd64 | gcc -O2 -mssse3           | 1198 | 1614 | 1039 | 3119 | 3484 | 6196 | 6658 |
+| "                     | x86   | gcc -O3 -march= native    | 1183 | 1597 | 1188 | 2916 | 3549 | 6524 | 6461 |
+| "                     | x86   | gcc -O2 -march= native    | 1195 | 1613 | 1191 | 2792 | 3511 | 6486 | 6377 |
+| "                     | x86   | gcc -O2 -mssse3           | 1196 | 1611 | 1191 | 2792 | 3521 | 6520 | 5862 |
+| Core i7 3632QM 2.2GHz | amd64 | gcc -O3 -march= native    | 1008 | 1309 |  753 | 2386 | 2805 | 5806 | 5084 |
+| "                     | amd64 | gcc -O2 -march= native    | 1007 | 1308 |  751 | 2426 | 2775 | 5648 | 4981 |
+| "                     | amd64 | gcc -O2 -mssse3           | 1005 | 1307 |  745 | 2455 | 2721 | 5570 | 5071 |
+| "                     | x86   | gcc -O3 -march= native    | 1010 | 1319 |  758 | 2366 | 2813 | 5642 | 4978 |
+| "                     | x86   | gcc -O2 -march= native    | 1007 | 1314 |  755 | 2336 | 2778 | 5527 | 4875 |
+| "                     | x86   | gcc -O2 -mssse3           | 1007 | 1306 |  755 | 2337 | 2805 | 5479 | 4943 |
+| Athlon XP 2800 2.0GHz | x86   | gcc -O3 -march= native    |  451 |  878 |  388 |  923 | 1264 |    - |    - |
+| "                     | x86   | gcc -O2 -march= native    |  451 |  875 |  390 |  893 | 1256 |    - |    - |
+| "                     | x86   | gcc -O2 -msse             |  488 |  830 |  356 |  918 | 1253 |    - |    - |
+| Atom N450 1.6GHz      | amd64 | gcc -O3 -march= native    |  388 |  656 |  130 |  623 |  743 | 1453 | 1075 |
+| "                     | amd64 | gcc -O2 -march= native    |  386 |  651 |  130 |  622 |  728 | 1385 |  919 |
+| "                     | amd64 | gcc -O2 -mssse3           |  310 |  604 |  141 |  517 |  657 | 1143 |  931 |
+| "                     | x86   | gcc -O3 -march= native    |  391 |  609 |  157 |  541 |  809 | 1423 |  913 |
+| "                     | x86   | gcc -O2 -march= native    |  389 |  606 |  156 |  533 |  790 | 1366 |  883 |
+| "                     | x86   | gcc -O2 -mssse3           |  312 |  581 |  120 |  466 |  605 | 1085 |  894 |
 
 
 lessons learned
 ---------------
+* If it's not an emberrassingly parallel algorithm, make it one (and then vectorize).
 
-As one can see in the benchmarks: beating a modern compiler is hard. Both gcc and msvc do a good job optimizing
-the C implementations. The author has not yet found a SSE2 implementation that beats the C reference on all
-platforms. While experimenting with the SSE2 instruction set, the author recognized that the data layout was not very
-well suited for the instruction set and algorithm.
-Alot of SSE2 performance gains come from reading input data in
-aligned 128bit chunks (movdqa). If the data to be processed is layed out such that this is possible,
-all performance follows naturally.
-In case of the x4djb algorithms, the bytes have to be reordered from sequential to parallel
-(0123012301230123 -> 0000111122223333).
-This is similar to a matrix-transpose, but on a single 128bit register across the four 32bit dwords
-(or in case of MMX across the two 32bit dwords in a 64bit register).
-SSE2 has shuffle instructions, but for 16bit words, not for single bytes. MMX has no shuffle at all.
-This means the shuffle needs to be emulated.
-The author tried many variations of reading and shuffling inputs in SSE2 but it
-remains the problematic part in the SSE2 implementation. SSSE3 added the \_mm\_shuffle\_epi8 instruction.
-This solvs the problem in a single opcode and enables a consciese and very fast
-vectorized solution that stands up to the expecations.
+The X4DJBX33A algorithm seems to be well suited for running
+on 128bit or 64bit wide vector registers.
+When it is not vectorized, it is slower than a well implemented vanilla DJBX33A algorithm.
+
+* The SSSE3 version is an experiment.
+
+The SSE2 version seems to be optimal and on fast machines it is only limited by the RAM bandwidth.
+The SSSE3 version does not hit that limit on slower Intel Atom platforms and maxes out
+on the CPU.
+
+* Opcode scheduling is important, so use intrinsics.
+
+Benchmarks with -O0 and -O1 builds have shown that even the MMX and SSE implementations
+get noticeably slower when not optimized. A look at the disassembled binaries of the
+-O2 and -O3 optimized builds shows that the compiler reorders instructions.
+It probably does this to enhance the instruction level parallelism and provide the CPU
+with useful intstructions while it is still waiting for some RAM I/O to complete.
+Using intrinsics instead of raw assembler code allows the developer to leverage the
+wisdom of the compiler.
+
+* The C implementation performance varies widely with the compiler.
+
+MSVC and GCC seem to produce very different code from the C implementations.
+This is not surprising as the research on auto-vectorization and compiler technology
+is still ongoing. The SSE2 version seems to be much more stable accross compilers and platforms.
 
 
