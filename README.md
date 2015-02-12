@@ -39,7 +39,7 @@ It then calculates the hashrate in MiB/s.
 Gcc version used is 4.8.2 or 4.8.3.
 Msvc version is 18.0 (Visual Studio 2013).
 
-| cpu | abi | compiler | djb x33a 32 ref | djb x33a 32 copt | djb x33a 128 ref | x4djb x33a 128 copt | x4djb x33a 128 mmx | x4djb x33a 128 sse2 | x4djb x33a 128 ssse3 |
+| cpu | abi | compiler | djb x33a 32 ref | djb x33a 32 copt | x4djb x33a 128 ref | x4djb x33a 128 copt | x4djb x33a 128 mmx | x4djb x33a 128 sse2 | x4djb x33a 128 ssse3 |
 |-----------------------|-------|---------------------------|-----:|-----:|-----:|-----:|-----:|-----:|-----:|
 | Core i7 4960HQ 2.6GHz | x64   | msvc /O2 /Ob2 /arch:sse2  |  898 | 3520 | 1013 | 3510 |    - | 6820 | 6680 |
 | "                     | x86   | msvc /O2 /Ob2 /arch:sse2  | 1121 | 2970 | 1184 | 1654 | 2200 | 6770 | 6610 |
